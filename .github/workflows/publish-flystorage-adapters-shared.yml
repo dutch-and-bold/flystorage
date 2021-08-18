@@ -1,0 +1,31 @@
+name: Publish DutchAndBold.Flystorage.Adapters.Shared
+on:
+  push:
+    branches-ignore:
+      - '**' # TODO: Re-enable when ready to release packages.
+    paths:
+      - .github/workflows/publish-flystorage-adapters-shared.yml
+      - src/DutchAndBold.Flystorage.Adapters.Shared/**
+
+jobs:
+  publish:
+    name: Version, Build, pack & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: dotnet/nbgv@master
+        id: nbgv
+        with:
+          path: src/DutchAndBold.Flystorage.Adapters.Shared
+
+      - uses: rohith/publish-nuget@v2
+        with:
+          PROJECT_FILE_PATH: src/DutchAndBold.Flystorage.Adapters.Shared/DutchAndBold.Flystorage.Adapters.Shared.csproj
+          VERSION_STATIC: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
+          NUGET_KEY: ${{secrets.API_KEY_NUGET}}
+          INCLUDE_SYMBOLS: true
+          TAG_COMMIT: ${{ steps.nbgv.outputs.publicRelease == 'True' }}
+          TAG_FORMAT: v*

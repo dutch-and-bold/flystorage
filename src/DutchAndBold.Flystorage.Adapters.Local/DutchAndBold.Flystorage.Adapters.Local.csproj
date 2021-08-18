@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DutchAndBold.Flystorage.Abstractions\DutchAndBold.Flystorage.Abstractions.csproj" />
+      <ProjectReference Include="..\DutchAndBold.Flystorage.Adapters.Shared\DutchAndBold.Flystorage.Adapters.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="MimeTypesMap" Version="1.0.8" />
+      <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
+      <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
+    </ItemGroup>
+
+</Project>

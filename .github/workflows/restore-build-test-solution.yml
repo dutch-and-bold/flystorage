@@ -1,0 +1,47 @@
+name: Restore, Build and Test Solution
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - src/**
+      - test/**
+
+  pull_request:
+    branches: [ main ]
+    paths:
+      - src/**
+      - test/**
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Install dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: >
+          dotnet test
+          --logger "trx;LogFileName=test-results.trx"
+          --results-directory ./test-results
+          --no-restore
+          --verbosity normal
+
+      - uses: actions/upload-artifact@v2
+        if: success() || failure()
+        with:
+          name: test-results
+          path: test-results

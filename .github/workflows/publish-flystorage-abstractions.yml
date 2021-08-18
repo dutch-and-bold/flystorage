@@ -1,0 +1,31 @@
+name: Publish DutchAndBold.Flystorage.Abstractions
+on:
+  push:
+    branches-ignore:
+      - '**' # TODO: Re-enable when ready to release packages.
+    paths:
+      - .github/workflows/publish-flystorage-abstractions.yml
+      - src/DutchAndBold.Flystorage.Abstractions/**
+
+jobs:
+  publish:
+    name: Version, Build, pack & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: dotnet/nbgv@master
+        id: nbgv
+        with:
+          path: src/DutchAndBold.Flystorage.Abstractions
+
+      - uses: rohith/publish-nuget@v2
+        with:
+          PROJECT_FILE_PATH: src/DutchAndBold.Flystorage.Abstractions/DutchAndBold.Flystorage.Abstractions.csproj
+          VERSION_STATIC: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
+          NUGET_KEY: ${{secrets.API_KEY_NUGET}}
+          INCLUDE_SYMBOLS: true
+          TAG_COMMIT: ${{ steps.nbgv.outputs.publicRelease == 'True' }}
+          TAG_FORMAT: v*
