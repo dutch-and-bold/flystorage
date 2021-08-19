@@ -27,7 +27,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         private readonly bool _isRunningUnderUnix = OperatingSystem.IsMacOS() || OperatingSystem.IsLinux();
 
         //[SupportedOSPlatformGuard("windows")] TODO: Enable in .NET6.0
-        private readonly bool _isRunningUnderWindows = OperatingSystem.IsMacOS() || OperatingSystem.IsLinux();
+        private readonly bool _isRunningUnderWindows = OperatingSystem.IsWindows();
 
         private readonly IFilePermissionStrategy _filePermissionStrategy;
 
@@ -72,7 +72,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_create_a_root_directory_results_in_an_exception()
         {
             // Arrange
-            var prefixer = Mock.Of<IPathPrefixer>(o => o.PrefixPath(string.Empty) == "/cannot-create/this-directory/");
+            var prefixer = Mock.Of<IPathPrefixer>(o => o.PrefixPath(string.Empty) == InaccessiblePath + "cannot-create/this-directory/");
             Action action = () => new LocalFilesystemAdapter(prefixer, Mock.Of<IFilePermissionStrategy>());
 
             // Assert
@@ -804,8 +804,11 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             unixFileInfo.CreateSymbolicLink(linkPath);
         }
 
-        private static IPathPrefixer PrefixerWithInaccessibleLocation => new PathPrefixer(
-            Path.DirectorySeparatorChar.ToString(),
+        private string InaccessiblePath =>
+            Path.GetPathRoot(Environment.CurrentDirectory) + (_isRunningUnderWindows ? "Windows\\" : "");
+
+        private IPathPrefixer PrefixerWithInaccessibleLocation => new PathPrefixer(
+            InaccessiblePath,
             Path.DirectorySeparatorChar);
 
         private IPathPrefixer PrefixerWithTestRoot => new PathPrefixer(_root, Path.DirectorySeparatorChar);
