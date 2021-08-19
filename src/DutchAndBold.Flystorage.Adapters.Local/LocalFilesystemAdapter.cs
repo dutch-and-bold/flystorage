@@ -33,15 +33,15 @@ namespace DutchAndBold.Flystorage.Adapters.Local
             _filePermission = filePermission;
             _symbolicLinkPolicy = symbolicLinkPolicy;
 
-            EnsureDirectoryExists(string.Empty, DefaultVisibilityForDirectories);
+            EnsureDirectoryExists(_prefixer.PrefixPath(string.Empty), DefaultVisibilityForDirectories);
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public bool FileExists(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
-            return File.Exists(fullPath);
+            return File.Exists(location);
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
@@ -53,15 +53,15 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public void Write(string path, Stream contents, Config config = null)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
             EnsureDirectoryExists(
-                _prefixer.StripPrefix(Path.GetDirectoryName(fullPath)),
+                Path.GetDirectoryName(location),
                 ResolveVisibilityForDirectories(config?.Get<Visibility?>(Config.OptionDirectoryVisibility)));
 
             try
             {
-                using var fileStream = File.Create(fullPath);
+                using var fileStream = File.Create(location);
                 contents.Seek(0, SeekOrigin.Begin);
                 contents.CopyTo(fileStream);
                 fileStream.Close();
@@ -84,11 +84,11 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public Stream Read(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
             try
             {
-                return File.OpenRead(fullPath);
+                return File.OpenRead(location);
             }
             catch (IOException e)
             {
@@ -110,26 +110,26 @@ namespace DutchAndBold.Flystorage.Adapters.Local
                 return;
             }
 
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
             try
             {
-                File.Delete(fullPath);
+                File.Delete(location);
             }
             catch (IOException e)
             {
-                throw UnableToDeleteFileException.AtLocation(fullPath, e);
+                throw UnableToDeleteFileException.AtLocation(location, e);
             }
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public void DeleteDirectory(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
             try
             {
-                Directory.Delete(fullPath, true);
+                Directory.Delete(location, true);
             }
             catch (DirectoryNotFoundException)
             {
@@ -137,46 +137,47 @@ namespace DutchAndBold.Flystorage.Adapters.Local
             }
             catch (IOException e)
             {
-                throw UnableToDeleteDirectoryException.AtLocation(fullPath, e);
+                throw UnableToDeleteDirectoryException.AtLocation(location, e);
             }
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public void CreateDirectory(string path, Config config)
         {
+            var location = _prefixer.PrefixPath(path);
             var visibilityConfigValue = config?.Get<Visibility?>(Config.OptionDirectoryVisibility) ??
                                         config?.Get<Visibility?>(Config.OptionVisibility);
             var visibility = ResolveVisibilityForDirectories(visibilityConfigValue);
-            EnsureDirectoryExists(path, visibility);
+            EnsureDirectoryExists(location, visibility);
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public void SetVisibility(string path, Visibility visibility)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
-            if (Directory.Exists(fullPath))
+            if (Directory.Exists(location))
             {
-                _filePermission.SetDirectoryPermissions(fullPath, visibility);
+                _filePermission.SetDirectoryPermissions(location, visibility);
                 return;
             }
 
-            _filePermission.SetFilePermissions(fullPath, visibility);
+            _filePermission.SetFilePermissions(location, visibility);
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public FileAttributes Visibility(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
-            if (Directory.Exists(fullPath))
+            if (Directory.Exists(location))
             {
-                return new FileAttributes(path) { Visibility = _filePermission.GetDirectoryPermissions(fullPath) };
+                return new FileAttributes(path) { Visibility = _filePermission.GetDirectoryPermissions(location) };
             }
 
-            if (File.Exists(fullPath))
+            if (File.Exists(location))
             {
-                return new FileAttributes(path) { Visibility = _filePermission.GetFilePermissions(fullPath) };
+                return new FileAttributes(path) { Visibility = _filePermission.GetFilePermissions(location) };
             }
 
             throw UnableToRetrieveMetadataException.Visibility(path);
@@ -185,9 +186,9 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public FileAttributes MimeType(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
-            var mimeType = MimeTypesMap.GetMimeType(fullPath);
+            var mimeType = MimeTypesMap.GetMimeType(location);
 
             if (!FileExists(path) || string.IsNullOrEmpty(mimeType))
             {
@@ -200,7 +201,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public FileAttributes LastModified(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
             if (!FileExists(path))
             {
@@ -209,7 +210,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
 
             try
             {
-                return new FileAttributes(path) { LastModified = File.GetLastWriteTime(fullPath) };
+                return new FileAttributes(path) { LastModified = File.GetLastWriteTime(location) };
             }
             catch (IOException e)
             {
@@ -220,7 +221,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public FileAttributes FileSize(string path)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
             if (!FileExists(path))
             {
@@ -229,7 +230,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
 
             try
             {
-                return new FileAttributes(path) { FileSize = (int)new FileInfo(fullPath).Length };
+                return new FileAttributes(path) { FileSize = (int)new FileInfo(location).Length };
             }
             catch (IOException e)
             {
@@ -240,9 +241,9 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public IEnumerable<StorageAttributes> ListContents(string path, bool deep)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            var location = _prefixer.PrefixPath(path);
 
-            if (!Directory.Exists(fullPath))
+            if (!Directory.Exists(location))
             {
                 return Array.Empty<StorageAttributes>();
             }
@@ -255,11 +256,11 @@ namespace DutchAndBold.Flystorage.Adapters.Local
             }
 
             var directories = Directory
-                .EnumerateDirectories(fullPath)
+                .EnumerateDirectories(location)
                 .Select(d => new DirectoryAttributes(_prefixer.StripPrefix(d)));
 
             var files = Directory
-                .EnumerateFiles(fullPath, "*", enumerateOptions)
+                .EnumerateFiles(location, "*", enumerateOptions)
                 .Select(
                     f =>
                     {
@@ -279,42 +280,40 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public void Move(string source, string destination, Config config)
         {
-            var sourceFullPath = _prefixer.PrefixPath(source);
-            var destinationFullPath = _prefixer.PrefixPath(destination);
+            var sourcelocation = _prefixer.PrefixPath(source);
+            var destinationlocation = _prefixer.PrefixPath(destination);
 
             try
             {
-                File.Move(sourceFullPath, destinationFullPath);
+                File.Move(sourcelocation, destinationlocation);
             }
             catch (IOException e)
             {
-                throw UnableToMoveFileException.FromLocationTo(sourceFullPath, destinationFullPath, e);
+                throw UnableToMoveFileException.FromLocationTo(sourcelocation, destinationlocation, e);
             }
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public void Copy(string source, string destination, Config config)
         {
-            var sourceFullPath = _prefixer.PrefixPath(source);
-            var destinationFullPath = _prefixer.PrefixPath(destination);
+            var sourceLocation = _prefixer.PrefixPath(source);
+            var destinationLocation = _prefixer.PrefixPath(destination);
 
             try
             {
-                File.Copy(sourceFullPath, destinationFullPath);
+                File.Copy(sourceLocation, destinationLocation);
             }
             catch (IOException e)
             {
-                throw UnableToCopyFileException.FromLocationTo(sourceFullPath, destinationFullPath, e);
+                throw UnableToCopyFileException.FromLocationTo(source, destination, e);
             }
         }
 
-        private void EnsureDirectoryExists(string path, Visibility visibility)
+        private void EnsureDirectoryExists(string location, Visibility visibility)
         {
-            var fullPath = _prefixer.PrefixPath(path);
+            void SetPermissions() => _filePermission.SetDirectoryPermissions(location, visibility);
 
-            void SetPermissions() => _filePermission.SetDirectoryPermissions(fullPath, visibility);
-
-            if (Directory.Exists(fullPath))
+            if (Directory.Exists(location))
             {
                 SetPermissions();
                 return;
@@ -322,15 +321,15 @@ namespace DutchAndBold.Flystorage.Adapters.Local
 
             try
             {
-                Directory.CreateDirectory(fullPath);
+                Directory.CreateDirectory(location);
             }
             catch (IOException e)
             {
-                throw UnableToCreateDirectoryException.AtLocation(path, e);
+                throw UnableToCreateDirectoryException.AtLocation(_prefixer.StripPrefix(location), e);
             }
             catch (UnauthorizedAccessException e)
             {
-                throw UnableToCreateDirectoryException.AtLocation(path, e);
+                throw UnableToCreateDirectoryException.AtLocation(_prefixer.StripPrefix(location), e);
             }
 
             SetPermissions();
