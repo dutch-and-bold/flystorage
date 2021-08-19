@@ -20,8 +20,6 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 {
     public class LocalFilesystemAdapterTests : IDisposable
     {
-        private readonly IPathPrefixer _prefixer;
-
         private readonly string _root;
 
         //[SupportedOSPlatformGuard("linux")] TODO: Enable in .NET6.0
@@ -36,7 +34,6 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public LocalFilesystemAdapterTests(ITestOutputHelper testOutputHelper)
         {
             _root = $"{Environment.CurrentDirectory}/.test/{testOutputHelper.GetTestName()}";
-            _prefixer = CreatePrefixerMock(_root);
 
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
@@ -65,7 +62,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void creating_a_local_filesystem_creates_a_root_directory()
         {
             // Act
-            new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
 
             // Assert
             Directory.Exists(_root).Should().BeTrue();
@@ -86,7 +83,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void writing_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
 
             // Act
             adapter.Write("/file.txt", "contents", new Config());
@@ -101,7 +98,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void writing_a_file_with_a_stream()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var stream = new MemoryStream(Encoding.Default.GetBytes("contents"));
 
             // Act
@@ -117,7 +114,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void writing_a_file_with_a_stream_and_visibility()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, _filePermissionStrategy);
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
             var stream = new MemoryStream(Encoding.Default.GetBytes("something"));
 
             // Act
@@ -135,7 +132,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void writing_a_file_with_visibility()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, _filePermissionStrategy);
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
 
             // Act
             adapter.Write(
@@ -152,7 +149,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void failing_to_set_visibility()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, _filePermissionStrategy);
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
 
             // Act
             Action action = () => adapter.SetVisibility("/file.txt", Visibility.Public);
@@ -165,13 +162,9 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void failing_to_write_a_file()
         {
             // Arrange
-            var prefixer = Mock.Of<IPathPrefixer>(
-                o =>
-                    o.PrefixPath(string.Empty) == "/" &&
-                    o.PrefixPath("/") == "/" &&
-                    o.PrefixPath("/cannot-create-a-file-here") == "/cannot-create-a-file-here" &&
-                    o.StripPrefix("/") == "/");
-            var adapter = new LocalFilesystemAdapter(prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(
+                PrefixerWithInaccessibleLocation,
+                Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.Write("/cannot-create-a-file-here", "contents", new Config());
 
             // Act & Assert
@@ -182,13 +175,9 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void failing_to_write_a_file_using_a_stream()
         {
             // Arrange
-            var prefixer = Mock.Of<IPathPrefixer>(
-                o =>
-                    o.PrefixPath(string.Empty) == "/" &&
-                    o.PrefixPath("/") == "/" &&
-                    o.PrefixPath("/cannot-create-a-file-here") == "/cannot-create-a-file-here" &&
-                    o.StripPrefix("/") == "/");
-            var adapter = new LocalFilesystemAdapter(prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(
+                PrefixerWithInaccessibleLocation,
+                Mock.Of<IFilePermissionStrategy>());
             var stream = new MemoryStream(Encoding.Default.GetBytes("something"));
             Action action = () => adapter.Write("/cannot-create-a-file-here", stream, new Config());
 
@@ -200,7 +189,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void deleting_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var file = "file.txt";
             var fullPath = _root + Path.DirectorySeparatorChar + "file.txt";
 
@@ -216,7 +205,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void deleting_a_file_that_does_not_exist()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.Delete("/file.txt");
 
             // Assert
@@ -238,7 +227,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void checking_if_a_file_exists()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             File.WriteAllText(_root + Path.DirectorySeparatorChar + "file.txt", "contents");
 
             // Act
@@ -252,7 +241,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void checking_if_a_file_exists_that_does_not_exsist()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
 
             // Act
             var fileExists = adapter.FileExists("/file.txt");
@@ -265,7 +254,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void listing_contents()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("directory/filename.txt", "content", new Config());
             adapter.Write("filename.txt", "content", new Config());
 
@@ -282,7 +271,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void listing_contents_recursively()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("directory/filename.txt", "content", new Config());
             adapter.Write("filename.txt", "content", new Config());
 
@@ -299,7 +288,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void listing_a_non_existing_directory()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
 
             // Act
             var contentListing = adapter.ListContents("/directory/", false);
@@ -314,7 +303,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(
-                _prefixer,
+                PrefixerWithTestRoot,
                 Mock.Of<IFilePermissionStrategy>(),
                 SymbolicLinkPolicy.SkipLinks);
 
@@ -336,7 +325,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(
-                _prefixer,
+                PrefixerWithTestRoot,
                 Mock.Of<IFilePermissionStrategy>(),
                 SymbolicLinkPolicy.DisallowLinks);
 
@@ -354,7 +343,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void deleting_a_directory()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var directoryPath = _root +
                                 Path.DirectorySeparatorChar +
                                 "directory" +
@@ -384,7 +373,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void deleting_directories_with_other_directories_in_it()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var directoryPath = _root +
                                 Path.DirectorySeparatorChar +
                                 "a" +
@@ -412,7 +401,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void deleting_a_non_existing_directory()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.DeleteDirectory("/non-existing-directory/");
 
             // Act & Assert
@@ -423,7 +412,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_delete_a_directory()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.DeleteDirectory("/non-existing-directory/");
 
             // TODO: Mock System.IO.Directory.Delete failure
@@ -436,7 +425,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_delete_a_sub_directory()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var directoryPath = _root +
                                 Path.DirectorySeparatorChar +
                                 "a" +
@@ -456,7 +445,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void creating_a_directory()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, _filePermissionStrategy);
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
 
             // Act
             adapter.CreateDirectory(
@@ -479,9 +468,9 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_create_a_directory()
         {
             // Arrange
-            var prefixer = Mock.Of<IPathPrefixer>(
-                o => o.PrefixPath(string.Empty) == "/" && o.PrefixPath("/something/") == "/something/");
-            var adapter = new LocalFilesystemAdapter(prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(
+                PrefixerWithInaccessibleLocation,
+                Mock.Of<IFilePermissionStrategy>());
 
             Action action = () => adapter.CreateDirectory("/something/", new Config());
 
@@ -493,7 +482,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void creating_a_directory_is_idempotent()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, _filePermissionStrategy);
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
 
             // Act
             adapter.CreateDirectory(
@@ -511,7 +500,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void retrieving_visibility()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, _filePermissionStrategy);
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
             adapter.Write(
                 "public.txt",
                 "contents",
@@ -534,7 +523,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_retrieve_visibility()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.Visibility("something.txt");
 
             // Act & Assert
@@ -545,7 +534,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void moving_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("first.txt", "contents", new Config());
 
             // Act
@@ -560,7 +549,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_move_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.Move("first.txt", "second.txt", new Config());
 
             // Act & Assert
@@ -571,7 +560,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void copying_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("first.txt", "contents", new Config());
 
             // Act
@@ -586,7 +575,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_copy_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.Copy("first.txt", "second.txt", new Config());
 
             // Act & Assert
@@ -597,7 +586,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void getting_mimetype()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("flysystem.svg", File.ReadAllText("TestFiles/flysystem.svg"), new Config());
 
             // Act
@@ -619,7 +608,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_get_mimetype()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.MimeType("flysystem.svg");
 
             // Act & Assert
@@ -630,7 +619,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void getting_last_modified()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var theTimeJustBeforeCreation = DateTimeOffset.Now.Subtract(TimeSpan.FromSeconds(1));
             adapter.Write("first.txt", "contents", new Config());
 
@@ -645,7 +634,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_get_last_modified()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.LastModified("first.txt");
 
             // Act & Assert
@@ -656,7 +645,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void getting_file_size()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("first.txt", "contents", new Config());
 
             // Act
@@ -670,7 +659,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_get_file_size()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.FileSize("first.txt");
 
             // Act & Assert
@@ -681,7 +670,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void reading_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("path.txt", "contents", new Config());
 
             // Act
@@ -695,7 +684,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_read_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.ReadString("path.txt");
 
             // Act & Assert
@@ -706,7 +695,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void reading_a_stream()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             adapter.Write("path.txt", "contents", new Config());
 
             // Act
@@ -722,7 +711,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_stream_read_a_file()
         {
             // Arrange
-            var adapter = new LocalFilesystemAdapter(_prefixer, Mock.Of<IFilePermissionStrategy>());
+            var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             Action action = () => adapter.Read("path.txt");
 
             // Act & Assert
@@ -815,17 +804,10 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             unixFileInfo.CreateSymbolicLink(linkPath);
         }
 
-        private IPathPrefixer CreatePrefixerMock(string rootDirectory)
-        {
-            var prefixerMock = new Mock<IPathPrefixer>();
+        private static IPathPrefixer PrefixerWithInaccessibleLocation => new PathPrefixer(
+            Path.DirectorySeparatorChar.ToString(),
+            Path.DirectorySeparatorChar);
 
-            prefixerMock.Setup(p => p.PrefixPath(It.IsAny<string>()))
-                .Returns<string>(p => rootDirectory + (string.IsNullOrEmpty(p) ? "" : Path.DirectorySeparatorChar + p));
-
-            prefixerMock.Setup(p => p.StripPrefix(It.IsAny<string>()))
-                .Returns<string>(p => p.Replace(rootDirectory, ""));
-
-            return prefixerMock.Object;
-        }
+        private IPathPrefixer PrefixerWithTestRoot => new PathPrefixer(_root, Path.DirectorySeparatorChar);
     }
 }
