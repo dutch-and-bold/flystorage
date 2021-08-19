@@ -99,7 +99,10 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         /// <inheritdoc cref="IFilesystemAdapter"/>
         public string ReadString(string path)
         {
-            return new StreamReader(Read(path)).ReadToEnd();
+            var stream = new StreamReader(Read(path));
+            var text = stream.ReadToEnd();
+            stream.Close();
+            return text;
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
