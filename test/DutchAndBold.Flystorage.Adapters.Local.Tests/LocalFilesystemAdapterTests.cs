@@ -8,15 +8,17 @@ using DutchAndBold.Flystorage.Abstractions.Models;
 using DutchAndBold.Flystorage.Adapters.Local.Contracts;
 using DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies;
 using DutchAndBold.Flystorage.Adapters.Local.Models;
+using DutchAndBold.Flystorage.Adapters.Shared;
 using DutchAndBold.Flystorage.Adapters.Shared.Contracts;
 using FluentAssertions;
 using Mono.Unix;
 using Moq;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 {
-    public class LocalFilesystemAdapterTests : IClassFixture<PrefixerFixture>, IDisposable
+    public class LocalFilesystemAdapterTests : IDisposable
     {
         private readonly IPathPrefixer _prefixer;
 
@@ -31,10 +33,10 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 
         private readonly IFilePermissionStrategy _filePermissionStrategy;
 
-        public LocalFilesystemAdapterTests(PrefixerFixture prefixerFixture)
+        public LocalFilesystemAdapterTests(ITestOutputHelper testOutputHelper)
         {
-            _prefixer = prefixerFixture.Prefixer;
-            _root = PrefixerFixture.Root;
+            _root = $"{Environment.CurrentDirectory}/.test/{testOutputHelper.GetTestName()}";
+            _prefixer = CreatePrefixerMock(_root);
 
             if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
@@ -92,7 +94,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Assert
             Directory.Exists(_root).Should().BeTrue();
             File.Exists(_root + "/file.txt").Should().BeTrue();
-            File.OpenText(_root + "/file.txt").ReadToEnd().Should().Be("contents");
+            File.ReadAllText(_root + "/file.txt").Should().Be("contents");
         }
 
         [Fact]
@@ -108,7 +110,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Assert
             Directory.Exists(_root).Should().BeTrue();
             File.Exists(_root + "/file.txt").Should().BeTrue();
-            File.OpenText(_root + "/file.txt").ReadToEnd().Should().Be("contents");
+            File.ReadAllText(_root + "/file.txt").Should().Be("contents");
         }
 
         [Fact]
@@ -125,7 +127,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
                 new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
 
             // Assert
-            File.OpenText(_root + Path.DirectorySeparatorChar + "file.txt").ReadToEnd().Should().Be("something");
+            File.ReadAllText(_root + Path.DirectorySeparatorChar + "file.txt").Should().Be("something");
             AssertFilePermissions(_root + Path.DirectorySeparatorChar + "file.txt", Visibility.Private);
         }
 
@@ -142,7 +144,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
                 new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
 
             // Assert
-            File.OpenText(_root + "/file.txt").ReadToEnd().Should().Be("contents");
+            File.ReadAllText(_root + "/file.txt").Should().Be("contents");
             AssertFilePermissions(_root + Path.DirectorySeparatorChar + "file.txt", Visibility.Private);
         }
 
@@ -710,6 +712,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Act
             var stream = adapter.Read("path.txt");
             var contents = new StreamReader(stream).ReadToEnd();
+            stream.Close();
 
             // Assert
             contents.Should().Be("contents");
@@ -810,6 +813,19 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 
             var unixFileInfo = new UnixFileInfo(sourcePath);
             unixFileInfo.CreateSymbolicLink(linkPath);
+        }
+
+        private IPathPrefixer CreatePrefixerMock(string rootDirectory)
+        {
+            var prefixerMock = new Mock<IPathPrefixer>();
+
+            prefixerMock.Setup(p => p.PrefixPath(It.IsAny<string>()))
+                .Returns<string>(p => rootDirectory + (string.IsNullOrEmpty(p) ? "" : Path.DirectorySeparatorChar + p));
+
+            prefixerMock.Setup(p => p.StripPrefix(It.IsAny<string>()))
+                .Returns<string>(p => p.Replace(rootDirectory, ""));
+
+            return prefixerMock.Object;
         }
     }
 }
