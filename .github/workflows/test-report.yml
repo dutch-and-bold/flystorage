@@ -7,14 +7,17 @@ on:
       - completed
 jobs:
   report:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
     steps:
       - name: Test Reporter
         uses: dorny/test-reporter@v1.5.0
         if: success() || failure()
         with:
-          name: xUnit Tests
+          name: xUnit Tests (${{ matrix.os }})
           reporter: dotnet-trx
-          path: test-results.trx
+          path: ${{ matrix.os }}.trx
           artifact: test-results
           fail-on-error: false
