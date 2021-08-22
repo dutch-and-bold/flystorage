@@ -759,8 +759,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             throw new InvalidOperationException("Operating system not supported.");
         }
 
-        private string InaccessiblePath =>
-            Path.GetPathRoot(Environment.CurrentDirectory) + (_isRunningUnderWindows ? "Windows\\" : "");
+        private string InaccessiblePath => _isRunningUnderWindows ? Environment.SystemDirectory + "\\" : "/";
 
         private IPathPrefixer PrefixerWithInaccessibleLocation => new PathPrefixer(
             InaccessiblePath,
