@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macos-latest, windows-latest, ubuntu-latest ]
+        os: [ macos-latest, ubuntu-latest ]
     steps:
       - name: Test Reporter
         uses: dorny/test-reporter@v1.5.0
