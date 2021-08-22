@@ -11,25 +11,37 @@ namespace DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies
     [SupportedOSPlatform("macos")]
     public class UnixFilePermissionStrategy : IFilePermissionStrategy
     {
-        private const FileAccessPermissions FilePermissionsPublic = FileAccessPermissions.UserRead |
-                                                                     FileAccessPermissions.UserWrite |
-                                                                     FileAccessPermissions.GroupRead |
-                                                                     FileAccessPermissions.OtherRead;
+        private readonly FileAccessPermissions _filePermissionsPublic = FileAccessPermissions.UserRead |
+                                                                        FileAccessPermissions.UserWrite |
+                                                                        FileAccessPermissions.GroupRead |
+                                                                        FileAccessPermissions.OtherRead;
 
-        private const FileAccessPermissions FilePermissionsPrivate = FileAccessPermissions.UserRead |
-                                                                      FileAccessPermissions.UserWrite;
+        private readonly FileAccessPermissions _filePermissionsPrivate = FileAccessPermissions.UserRead |
+                                                                         FileAccessPermissions.UserWrite;
 
-        private const FileAccessPermissions DirectoryPermissionsPublic = FileAccessPermissions.UserRead |
-                                                                         FileAccessPermissions.UserWrite |
-                                                                         FileAccessPermissions.UserExecute |
-                                                                         FileAccessPermissions.GroupRead |
-                                                                         FileAccessPermissions.GroupExecute |
-                                                                         FileAccessPermissions.OtherRead |
-                                                                         FileAccessPermissions.OtherExecute;
+        private readonly FileAccessPermissions _directoryPermissionsPublic = FileAccessPermissions.UserRead |
+                                                                             FileAccessPermissions.UserWrite |
+                                                                             FileAccessPermissions.UserExecute |
+                                                                             FileAccessPermissions.GroupRead |
+                                                                             FileAccessPermissions.GroupExecute |
+                                                                             FileAccessPermissions.OtherRead |
+                                                                             FileAccessPermissions.OtherExecute;
 
-        private const FileAccessPermissions DirectoryPermissionsPrivate = FileAccessPermissions.UserRead |
-                                                                           FileAccessPermissions.UserWrite |
-                                                                           FileAccessPermissions.UserExecute;
+        private readonly FileAccessPermissions _directoryPermissionsPrivate = FileAccessPermissions.UserRead |
+                                                                              FileAccessPermissions.UserWrite |
+                                                                              FileAccessPermissions.UserExecute;
+
+        public UnixFilePermissionStrategy(
+            FileAccessPermissions? filePermissionsPublic = null,
+            FileAccessPermissions? filePermissionsPrivate = null,
+            FileAccessPermissions? directoryPermissionsPublic = null,
+            FileAccessPermissions? directoryPermissionsPrivate = null)
+        {
+            _filePermissionsPublic = filePermissionsPublic ?? _filePermissionsPublic;
+            _filePermissionsPrivate = filePermissionsPrivate ?? _filePermissionsPrivate;
+            _directoryPermissionsPublic = directoryPermissionsPublic ?? _directoryPermissionsPublic;
+            _directoryPermissionsPrivate = directoryPermissionsPrivate ?? _directoryPermissionsPrivate;
+        }
 
         public void SetFilePermissions(string fullPath, Visibility visibility)
         {
@@ -38,8 +50,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies
                 var unixFileInfo = new UnixFileInfo(fullPath)
                 {
                     FileAccessPermissions = visibility == Visibility.Public
-                        ? FilePermissionsPublic
-                        : FilePermissionsPrivate
+                        ? _filePermissionsPublic
+                        : _filePermissionsPrivate
                 };
                 unixFileInfo.Refresh();
             }
@@ -56,8 +68,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies
                 var unixDirectoryInfo = new UnixDirectoryInfo(fullPath)
                 {
                     FileAccessPermissions = visibility == Visibility.Public
-                        ? DirectoryPermissionsPublic
-                        : DirectoryPermissionsPrivate
+                        ? _directoryPermissionsPublic
+                        : _directoryPermissionsPrivate
                 };
                 unixDirectoryInfo.Refresh();
             }
@@ -69,14 +81,14 @@ namespace DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies
 
         public Visibility GetFilePermissions(string fullPath)
         {
-            return new UnixFileInfo(fullPath).FileAccessPermissions == FilePermissionsPublic
+            return new UnixFileInfo(fullPath).FileAccessPermissions == _filePermissionsPublic
                 ? Visibility.Public
                 : Visibility.Private;
         }
 
         public Visibility GetDirectoryPermissions(string fullPath)
         {
-            return new UnixDirectoryInfo(fullPath).FileAccessPermissions == FilePermissionsPublic
+            return new UnixDirectoryInfo(fullPath).FileAccessPermissions == _filePermissionsPublic
                 ? Visibility.Public
                 : Visibility.Private;
         }
