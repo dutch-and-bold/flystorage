@@ -25,6 +25,8 @@ ProjectSection(SolutionItems) = preProject
 	version.json = version.json
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests", "test\DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests\DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests.csproj", "{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -110,10 +112,23 @@ Global
 		{6C2ABA92-6069-4B2A-96E0-98845079F3DC}.Release|x64.Build.0 = Release|Any CPU
 		{6C2ABA92-6069-4B2A-96E0-98845079F3DC}.Release|x86.ActiveCfg = Release|Any CPU
 		{6C2ABA92-6069-4B2A-96E0-98845079F3DC}.Release|x86.Build.0 = Release|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Debug|x64.Build.0 = Debug|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Debug|x86.Build.0 = Debug|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Release|x64.ActiveCfg = Release|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Release|x64.Build.0 = Release|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Release|x86.ActiveCfg = Release|Any CPU
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{473C5959-AB6B-4C69-9B70-2428C9315856} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
 		{58F6EBF0-EAD0-494F-837A-EFA2A18D6D4B} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
 		{6C2ABA92-6069-4B2A-96E0-98845079F3DC} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
+		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
 	EndGlobalSection
 EndGlobal
