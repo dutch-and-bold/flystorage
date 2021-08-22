@@ -72,7 +72,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_create_a_root_directory_results_in_an_exception()
         {
             // Arrange
-            var prefixer = Mock.Of<IPathPrefixer>(o => o.PrefixPath(string.Empty) == InaccessiblePath + "cannot-create/this-directory/");
+            var prefixer = Mock.Of<IPathPrefixer>(o =>
+                o.PrefixPath(string.Empty) == InaccessiblePath + "cannot-create/this-directory/");
             Action action = () => new LocalFilesystemAdapter(prefixer, Mock.Of<IFilePermissionStrategy>());
 
             // Assert
@@ -121,7 +122,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             adapter.Write(
                 "/file.txt",
                 stream,
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
 
             // Assert
             File.ReadAllText(_root + Path.DirectorySeparatorChar + "file.txt").Should().Be("something");
@@ -138,7 +139,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             adapter.Write(
                 "/file.txt",
                 "contents",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
 
             // Assert
             File.ReadAllText(_root + "/file.txt").Should().Be("contents");
@@ -450,13 +451,13 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Act
             adapter.CreateDirectory(
                 "public",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Public } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Public}}));
             adapter.CreateDirectory(
                 "private",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
             adapter.CreateDirectory(
                 "also_private",
-                new Config(new Dictionary<string, object> { { "directory_visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"directory_visibility", Visibility.Private}}));
 
             // Assert
             AssertDirectoryPermissions(_root + Path.DirectorySeparatorChar + "public", Visibility.Public);
@@ -487,10 +488,10 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Act
             adapter.CreateDirectory(
                 "/something/",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
             adapter.CreateDirectory(
                 "/something/",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Public } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Public}}));
 
             // Assert
             AssertDirectoryPermissions(_root + Path.DirectorySeparatorChar + "/something", Visibility.Public);
@@ -504,11 +505,11 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             adapter.Write(
                 "public.txt",
                 "contents",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Public } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Public}}));
             adapter.Write(
                 "private.txt",
                 "contents",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
 
             // Act
             var visibilityPublic = adapter.Visibility("public.txt");
@@ -732,76 +733,30 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 
         private void AssertFilePermissions(string path, Visibility visibility)
         {
-            switch (_isRunningUnderUnix)
-            {
-                case true when visibility == Visibility.Private:
-                    new UnixFileInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(FileAccessPermissions.UserWrite | FileAccessPermissions.UserRead);
-
-                    return;
-                case true when visibility == Visibility.Public:
-                    new UnixFileInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(
-                            FileAccessPermissions.UserWrite |
-                            FileAccessPermissions.UserRead |
-                            FileAccessPermissions.GroupRead |
-                            FileAccessPermissions.OtherRead);
-
-                    return;
-                default:
-                    throw new NotImplementedException(
-                        "Assertions for file permissions under windows are not implemented yet.");
-            }
+            _filePermissionStrategy.GetDirectoryPermissions(path).Should().Be(visibility);
         }
 
         private void AssertDirectoryPermissions(string path, Visibility visibility)
         {
-            switch (_isRunningUnderUnix)
-            {
-                case true when visibility == Visibility.Private:
-                    new UnixDirectoryInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(
-                            FileAccessPermissions.UserWrite |
-                            FileAccessPermissions.UserRead |
-                            FileAccessPermissions.UserExecute);
-
-                    return;
-                case true when visibility == Visibility.Public:
-                    new UnixDirectoryInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(
-                            FileAccessPermissions.UserExecute |
-                            FileAccessPermissions.UserWrite |
-                            FileAccessPermissions.UserRead |
-                            FileAccessPermissions.GroupRead |
-                            FileAccessPermissions.GroupExecute |
-                            FileAccessPermissions.OtherRead |
-                            FileAccessPermissions.OtherExecute);
-
-                    return;
-                default:
-                    throw new NotImplementedException(
-                        "Assertions for file permissions under windows are not implemented yet.");
-            }
+            _filePermissionStrategy.GetDirectoryPermissions(path).Should().Be(visibility);
         }
 
         private void CreateSymbolicLink(string sourcePath, string linkPath)
         {
-            if (!_isRunningUnderUnix)
+            if (_isRunningUnderWindows)
             {
-                throw new NotImplementedException(
-                    "Assertions for file permissions under windows are not implemented yet.");
+                WindowsTestUtilities.CreateSymbolicLink(linkPath, sourcePath);
+                return;
             }
 
-            var unixFileInfo = new UnixFileInfo(sourcePath);
-            unixFileInfo.CreateSymbolicLink(linkPath);
+            if (_isRunningUnderUnix)
+            {
+                var unixFileInfo = new UnixFileInfo(sourcePath);
+                unixFileInfo.CreateSymbolicLink(linkPath);
+                return;
+            }
+
+            throw new InvalidOperationException("Operating system not supported.");
         }
 
         private string InaccessiblePath =>

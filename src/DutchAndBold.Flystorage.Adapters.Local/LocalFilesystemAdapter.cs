@@ -159,13 +159,20 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         {
             var location = _prefixer.PrefixPath(path);
 
-            if (Directory.Exists(location))
+            try
             {
-                _filePermission.SetDirectoryPermissions(location, visibility);
-                return;
-            }
+                if (Directory.Exists(location))
+                {
+                    _filePermission.SetDirectoryPermissions(location, visibility);
+                    return;
+                }
 
-            _filePermission.SetFilePermissions(location, visibility);
+                _filePermission.SetFilePermissions(location, visibility);
+            }
+            catch (IOException e)
+            {
+                throw UnableToSetVisibilityException.AtLocation(path, e);
+            }
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
