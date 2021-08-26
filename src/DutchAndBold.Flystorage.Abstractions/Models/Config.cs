@@ -1,9 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace DutchAndBold.Flystorage.Abstractions.Models
 {
-    public class Config
+    public class Config : IEnumerable
     {
         public const string OptionVisibility = "visibility";
 
@@ -23,7 +24,7 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
 
         public Config Extend(Dictionary<string, object> options)
         {
-            return new(new List<Dictionary<string, object>>
+            return new Config(new List<Dictionary<string, object>>
                 {
                     options,
                     _options
@@ -35,7 +36,7 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
 
         public Config WithDefaults(Dictionary<string, object> defaults)
         {
-            return new(new List<Dictionary<string, object>>
+            return new Config(new List<Dictionary<string, object>>
                 {
                     _options,
                     defaults
@@ -43,6 +44,16 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
                 .SelectMany(dict => dict)
                 .ToLookup(pair => pair.Key, pair => pair.Value)
                 .ToDictionary(group => group.Key, group => group.First()));
+        }
+
+        public void Add(string option, object value)
+        {
+            _options.Add(option, value);
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return _options.GetEnumerator();
         }
     }
 }

@@ -21,7 +21,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\DutchAndBold.Flystorage.Extensions\DutchAndBold.Flystorage.Extensions.csproj" />
       <ProjectReference Include="..\..\src\DutchAndBold.Flystorage.Abstractions\DutchAndBold.Flystorage.Abstractions.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="TestFiles\flysystem.svg">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

@@ -21,7 +21,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\DutchAndBold.Flystorage.Abstractions\DutchAndBold.Flystorage.Abstractions.csproj" />
+      <ProjectReference Include="..\..\DutchAndBold.Flystorage.Extensions\DutchAndBold.Flystorage.Extensions.csproj" />
+      <ProjectReference Include="..\..\src\DutchAndBold.Flystorage.Adapters.InMemory\DutchAndBold.Flystorage.Adapters.InMemory.csproj" />
+      <ProjectReference Include="..\DutchAndBold.Flystorage.Adapters.Tests\DutchAndBold.Flystorage.Adapters.Tests.csproj" />
     </ItemGroup>
 
 </Project>

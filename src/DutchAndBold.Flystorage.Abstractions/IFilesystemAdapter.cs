@@ -18,17 +18,6 @@ namespace DutchAndBold.Flystorage.Abstractions
         public bool FileExists(string path);
 
         /// <summary>
-        /// Writes a string value to the given location.
-        /// Warning: Only use when using a Stream is not possible.
-        /// </summary>
-        /// <param name="path">The location of the file.</param>
-        /// <param name="contents">The string to write to the file.</param>
-        /// <param name="config">An optional configuration array.</param>
-        /// <exception cref="FilesystemException"></exception>
-        /// <exception cref="UnableToWriteFileException"></exception>
-        public void Write(string path, string contents, Config config = null);
-
-        /// <summary>
         /// Writes a stream to the given location.
         /// </summary>
         /// <param name="path">The location of the file.</param>
@@ -46,16 +35,6 @@ namespace DutchAndBold.Flystorage.Abstractions
         /// <exception cref="UnableToReadFileException"></exception>
         /// <returns>File as stream.</returns>
         public Stream Read(string path);
-
-        /// <summary>
-        /// Reads the file at path as String.
-        /// Because of it's memory inefficient nature, always use <see cref="Read(string)"/> unless you need a string.
-        /// </summary>
-        /// <param name="path">The location of the file.</param>
-        /// <exception cref="FilesystemException"></exception>
-        /// <exception cref="UnableToReadFileException"></exception>
-        /// <returns>File as stream.</returns>
-        public string ReadString(string path);
 
         /// <summary>
         /// Deletes the file at path.
@@ -80,7 +59,7 @@ namespace DutchAndBold.Flystorage.Abstractions
         /// <param name="config">An optional configuration array.</param>
         /// <exception cref="FilesystemException"></exception>
         /// <exception cref="UnableToCreateDirectoryException"></exception>
-        public void CreateDirectory(string path, Config config);
+        public void CreateDirectory(string path, Config config = null);
 
         /// <summary>
         /// Set's the visibility of directory or file at path.
@@ -139,7 +118,7 @@ namespace DutchAndBold.Flystorage.Abstractions
         /// <param name="destination">The location destination directory.</param>
         /// <param name="config">An optional configuration array.</param>
         /// <exception cref="FilesystemException"></exception>
-        public void Move(string source, string destination, Config config);
+        public void Move(string source, string destination, Config config = null);
 
         /// <summary>
         /// Copies the file at source to the destination path.
@@ -148,6 +127,6 @@ namespace DutchAndBold.Flystorage.Abstractions
         /// <param name="destination">The location destination directory.</param>
         /// <param name="config">An optional configuration array.</param>
         /// <exception cref="FilesystemException"></exception>
-        public void Copy(string source, string destination, Config config);
+        public void Copy(string source, string destination, Config config = null);
     }
 }
