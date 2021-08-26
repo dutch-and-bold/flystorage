@@ -10,6 +10,7 @@ using DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies;
 using DutchAndBold.Flystorage.Adapters.Local.Models;
 using DutchAndBold.Flystorage.Adapters.Shared;
 using DutchAndBold.Flystorage.Adapters.Shared.Contracts;
+using DutchAndBold.Flystorage.Extensions;
 using FluentAssertions;
 using Mono.Unix;
 using Moq;
@@ -35,20 +36,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             _root = $"{Environment.CurrentDirectory}/.test/{testOutputHelper.GetTestName()}";
 
-            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
-            {
-                _filePermissionStrategy = new UnixFilePermissionStrategy();
-            }
-
-            if (OperatingSystem.IsWindows())
-            {
-                _filePermissionStrategy = new WindowsFilePermissionsStrategy();
-            }
-
-            if (_filePermissionStrategy == null)
-            {
-                throw new InvalidOperationException("Invalid operating system. Linux, MacOs and Windows are supported");
-            }
+            _filePermissionStrategy = new FilePermissionStrategyFactory().CreateForOS();
 
             DeleteDirectoryIfExists(_root);
         }
@@ -72,7 +60,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         public void not_being_able_to_create_a_root_directory_results_in_an_exception()
         {
             // Arrange
-            var prefixer = Mock.Of<IPathPrefixer>(o => o.PrefixPath(string.Empty) == InaccessiblePath + "cannot-create/this-directory/");
+            var prefixer = Mock.Of<IPathPrefixer>(o =>
+                o.PrefixPath(string.Empty) == InaccessiblePath + "cannot-create/this-directory/");
             Action action = () => new LocalFilesystemAdapter(prefixer, Mock.Of<IFilePermissionStrategy>());
 
             // Assert
@@ -86,7 +75,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
 
             // Act
-            adapter.Write("/file.txt", "contents", new Config());
+            adapter.WriteString("/file.txt", "contents", new Config());
 
             // Assert
             Directory.Exists(_root).Should().BeTrue();
@@ -121,7 +110,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             adapter.Write(
                 "/file.txt",
                 stream,
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
 
             // Assert
             File.ReadAllText(_root + Path.DirectorySeparatorChar + "file.txt").Should().Be("something");
@@ -135,10 +124,10 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
 
             // Act
-            adapter.Write(
+            adapter.WriteString(
                 "/file.txt",
                 "contents",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
 
             // Assert
             File.ReadAllText(_root + "/file.txt").Should().Be("contents");
@@ -165,7 +154,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             var adapter = new LocalFilesystemAdapter(
                 PrefixerWithInaccessibleLocation,
                 Mock.Of<IFilePermissionStrategy>());
-            Action action = () => adapter.Write("/cannot-create-a-file-here", "contents", new Config());
+            Action action = () => adapter.WriteString("/cannot-create-a-file-here", "contents", new Config());
 
             // Act & Assert
             action.Should().Throw<UnableToWriteFileException>();
@@ -255,8 +244,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("directory/filename.txt", "content", new Config());
-            adapter.Write("filename.txt", "content", new Config());
+            adapter.WriteString("directory/filename.txt", "content", new Config());
+            adapter.WriteString("filename.txt", "content", new Config());
 
             // Act
             var contentListing = adapter.ListContents("/", false);
@@ -272,8 +261,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("directory/filename.txt", "content", new Config());
-            adapter.Write("filename.txt", "content", new Config());
+            adapter.WriteString("directory/filename.txt", "content", new Config());
+            adapter.WriteString("filename.txt", "content", new Config());
 
             // Act
             var contentListing = adapter.ListContents("/", true);
@@ -450,13 +439,13 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Act
             adapter.CreateDirectory(
                 "public",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Public } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Public}}));
             adapter.CreateDirectory(
                 "private",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
             adapter.CreateDirectory(
                 "also_private",
-                new Config(new Dictionary<string, object> { { "directory_visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"directory_visibility", Visibility.Private}}));
 
             // Assert
             AssertDirectoryPermissions(_root + Path.DirectorySeparatorChar + "public", Visibility.Public);
@@ -487,10 +476,10 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Act
             adapter.CreateDirectory(
                 "/something/",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
             adapter.CreateDirectory(
                 "/something/",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Public } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Public}}));
 
             // Assert
             AssertDirectoryPermissions(_root + Path.DirectorySeparatorChar + "/something", Visibility.Public);
@@ -501,14 +490,14 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, _filePermissionStrategy);
-            adapter.Write(
+            adapter.WriteString(
                 "public.txt",
                 "contents",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Public } }));
-            adapter.Write(
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Public}}));
+            adapter.WriteString(
                 "private.txt",
                 "contents",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config(new Dictionary<string, object> {{"visibility", Visibility.Private}}));
 
             // Act
             var visibilityPublic = adapter.Visibility("public.txt");
@@ -535,7 +524,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("first.txt", "contents", new Config());
+            adapter.WriteString("first.txt", "contents", new Config());
 
             // Act
             adapter.Move("first.txt", "second.txt", new Config());
@@ -561,7 +550,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("first.txt", "contents", new Config());
+            adapter.WriteString("first.txt", "contents", new Config());
 
             // Act
             adapter.Copy("first.txt", "second.txt", new Config());
@@ -587,7 +576,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("flysystem.svg", File.ReadAllText("TestFiles/flysystem.svg"), new Config());
+            adapter.WriteString("flysystem.svg", File.ReadAllText("TestFiles/flysystem.svg"), new Config());
 
             // Act
             var fileAttributes = adapter.MimeType("flysystem.svg");
@@ -621,7 +610,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
             var theTimeJustBeforeCreation = DateTimeOffset.Now.Subtract(TimeSpan.FromSeconds(1));
-            adapter.Write("first.txt", "contents", new Config());
+            adapter.WriteString("first.txt", "contents", new Config());
 
             // Act
             var fileAttributes = adapter.LastModified("first.txt");
@@ -646,7 +635,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("first.txt", "contents", new Config());
+            adapter.WriteString("first.txt", "contents", new Config());
 
             // Act
             var fileAttributes = adapter.FileSize("first.txt");
@@ -671,7 +660,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("path.txt", "contents", new Config());
+            adapter.WriteString("path.txt", "contents", new Config());
 
             // Act
             var contents = adapter.ReadString("path.txt");
@@ -696,7 +685,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
         {
             // Arrange
             var adapter = new LocalFilesystemAdapter(PrefixerWithTestRoot, Mock.Of<IFilePermissionStrategy>());
-            adapter.Write("path.txt", "contents", new Config());
+            adapter.WriteString("path.txt", "contents", new Config());
 
             // Act
             var stream = adapter.Read("path.txt");
@@ -732,80 +721,33 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 
         private void AssertFilePermissions(string path, Visibility visibility)
         {
-            switch (_isRunningUnderUnix)
-            {
-                case true when visibility == Visibility.Private:
-                    new UnixFileInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(FileAccessPermissions.UserWrite | FileAccessPermissions.UserRead);
-
-                    return;
-                case true when visibility == Visibility.Public:
-                    new UnixFileInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(
-                            FileAccessPermissions.UserWrite |
-                            FileAccessPermissions.UserRead |
-                            FileAccessPermissions.GroupRead |
-                            FileAccessPermissions.OtherRead);
-
-                    return;
-                default:
-                    throw new NotImplementedException(
-                        "Assertions for file permissions under windows are not implemented yet.");
-            }
+            _filePermissionStrategy.GetDirectoryPermissions(path).Should().Be(visibility);
         }
 
         private void AssertDirectoryPermissions(string path, Visibility visibility)
         {
-            switch (_isRunningUnderUnix)
-            {
-                case true when visibility == Visibility.Private:
-                    new UnixDirectoryInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(
-                            FileAccessPermissions.UserWrite |
-                            FileAccessPermissions.UserRead |
-                            FileAccessPermissions.UserExecute);
-
-                    return;
-                case true when visibility == Visibility.Public:
-                    new UnixDirectoryInfo(path)
-                        .FileAccessPermissions
-                        .Should()
-                        .Be(
-                            FileAccessPermissions.UserExecute |
-                            FileAccessPermissions.UserWrite |
-                            FileAccessPermissions.UserRead |
-                            FileAccessPermissions.GroupRead |
-                            FileAccessPermissions.GroupExecute |
-                            FileAccessPermissions.OtherRead |
-                            FileAccessPermissions.OtherExecute);
-
-                    return;
-                default:
-                    throw new NotImplementedException(
-                        "Assertions for file permissions under windows are not implemented yet.");
-            }
+            _filePermissionStrategy.GetDirectoryPermissions(path).Should().Be(visibility);
         }
 
         private void CreateSymbolicLink(string sourcePath, string linkPath)
         {
-            if (!_isRunningUnderUnix)
+            if (_isRunningUnderWindows)
             {
-                throw new NotImplementedException(
-                    "Assertions for file permissions under windows are not implemented yet.");
+                WindowsTestUtilities.CreateSymbolicLink(linkPath, sourcePath);
+                return;
             }
 
-            var unixFileInfo = new UnixFileInfo(sourcePath);
-            unixFileInfo.CreateSymbolicLink(linkPath);
+            if (_isRunningUnderUnix)
+            {
+                var unixFileInfo = new UnixFileInfo(sourcePath);
+                unixFileInfo.CreateSymbolicLink(linkPath);
+                return;
+            }
+
+            throw new InvalidOperationException("Operating system not supported.");
         }
 
-        private string InaccessiblePath =>
-            Path.GetPathRoot(Environment.CurrentDirectory) + (_isRunningUnderWindows ? "Windows\\" : "");
+        private string InaccessiblePath => _isRunningUnderWindows ? Environment.SystemDirectory + "\\" : "/";
 
         private IPathPrefixer PrefixerWithInaccessibleLocation => new PathPrefixer(
             InaccessiblePath,

@@ -1,3 +1,5 @@
+using System;
+
 namespace DutchAndBold.Flystorage.Abstractions.Models
 {
     public abstract class StorageAttributes
@@ -19,5 +21,12 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
         public abstract bool IsFile();
 
         public bool IsDirectory() => !IsFile();
+
+        public string Path { get; }
+
+        protected StorageAttributes(string path)
+        {
+            Path = path ?? throw new ArgumentNullException(nameof(path));
+        }
     }
 }

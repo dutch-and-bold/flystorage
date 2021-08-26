@@ -6,16 +6,24 @@ on:
     paths:
       - src/**
       - test/**
+      - .github/workflows/restore-build-test-solution.yml
+      - .github/workflows/test-report.yml
 
   pull_request:
     branches: [ main ]
     paths:
       - src/**
       - test/**
+      - .github/workflows/restore-build-test-solution.yml
+      - .github/workflows/test-report.yml
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ macos-latest, ubuntu-latest ]
+
     steps:
       - uses: actions/checkout@v2
         with:
@@ -35,7 +43,7 @@ jobs:
       - name: Test
         run: >
           dotnet test
-          --logger "trx;LogFileName=test-results.trx"
+          --logger "trx;LogFileName=${{ matrix.os }}.trx"
           --results-directory ./test-results
           --no-restore
           --verbosity normal

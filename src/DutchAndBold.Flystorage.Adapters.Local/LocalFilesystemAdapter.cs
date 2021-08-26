@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using DutchAndBold.Flystorage.Abstractions;
 using DutchAndBold.Flystorage.Abstractions.Exceptions;
 using DutchAndBold.Flystorage.Abstractions.Models;
 using DutchAndBold.Flystorage.Adapters.Local.Contracts;
 using DutchAndBold.Flystorage.Adapters.Local.Models;
 using DutchAndBold.Flystorage.Adapters.Shared.Contracts;
-using HeyRed.Mime;
+using MimeTypes;
 using FileAttributes = DutchAndBold.Flystorage.Abstractions.Models.FileAttributes;
 
 namespace DutchAndBold.Flystorage.Adapters.Local
@@ -29,8 +28,8 @@ namespace DutchAndBold.Flystorage.Adapters.Local
             IFilePermissionStrategy filePermission,
             SymbolicLinkPolicy symbolicLinkPolicy = SymbolicLinkPolicy.DisallowLinks)
         {
-            _prefixer = prefixer;
-            _filePermission = filePermission;
+            _prefixer = prefixer ?? throw new ArgumentNullException(nameof(prefixer));
+            _filePermission = filePermission ?? throw new ArgumentNullException(nameof(filePermission));
             _symbolicLinkPolicy = symbolicLinkPolicy;
 
             EnsureDirectoryExists(_prefixer.PrefixPath(string.Empty), DefaultVisibilityForDirectories);
@@ -42,12 +41,6 @@ namespace DutchAndBold.Flystorage.Adapters.Local
             var location = _prefixer.PrefixPath(path);
 
             return File.Exists(location);
-        }
-
-        /// <inheritdoc cref="IFilesystemAdapter"/>
-        public void Write(string path, string contents, Config config = null)
-        {
-            Write(path, new MemoryStream(Encoding.Default.GetBytes(contents)), config);
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
@@ -97,15 +90,6 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
-        public string ReadString(string path)
-        {
-            var stream = new StreamReader(Read(path));
-            var text = stream.ReadToEnd();
-            stream.Close();
-            return text;
-        }
-
-        /// <inheritdoc cref="IFilesystemAdapter"/>
         public void Delete(string path)
         {
             if (!FileExists(path))
@@ -145,7 +129,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
-        public void CreateDirectory(string path, Config config)
+        public void CreateDirectory(string path, Config config = null)
         {
             var location = _prefixer.PrefixPath(path);
             var visibilityConfigValue = config?.Get<Visibility?>(Config.OptionDirectoryVisibility) ??
@@ -159,13 +143,20 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         {
             var location = _prefixer.PrefixPath(path);
 
-            if (Directory.Exists(location))
+            try
             {
-                _filePermission.SetDirectoryPermissions(location, visibility);
-                return;
-            }
+                if (Directory.Exists(location))
+                {
+                    _filePermission.SetDirectoryPermissions(location, visibility);
+                    return;
+                }
 
-            _filePermission.SetFilePermissions(location, visibility);
+                _filePermission.SetFilePermissions(location, visibility);
+            }
+            catch (IOException e)
+            {
+                throw UnableToSetVisibilityException.AtLocation(path, e);
+            }
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
@@ -191,9 +182,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         {
             var location = _prefixer.PrefixPath(path);
 
-            var mimeType = MimeTypesMap.GetMimeType(location);
-
-            if (!FileExists(path) || string.IsNullOrEmpty(mimeType))
+            if (!FileExists(path) || !MimeTypeMap.TryGetMimeType(path, out var mimeType))
             {
                 throw UnableToRetrieveMetadataException.MimeType(path);
             }
@@ -233,7 +222,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local
 
             try
             {
-                return new FileAttributes(path) { FileSize = (int)new FileInfo(location).Length };
+                return new FileAttributes(path) { FileSize = new FileInfo(location).Length };
             }
             catch (IOException e)
             {
@@ -281,29 +270,38 @@ namespace DutchAndBold.Flystorage.Adapters.Local
         }
 
         /// <inheritdoc cref="IFilesystemAdapter"/>
-        public void Move(string source, string destination, Config config)
-        {
-            var sourcelocation = _prefixer.PrefixPath(source);
-            var destinationlocation = _prefixer.PrefixPath(destination);
-
-            try
-            {
-                File.Move(sourcelocation, destinationlocation);
-            }
-            catch (IOException e)
-            {
-                throw UnableToMoveFileException.FromLocationTo(sourcelocation, destinationlocation, e);
-            }
-        }
-
-        /// <inheritdoc cref="IFilesystemAdapter"/>
-        public void Copy(string source, string destination, Config config)
+        public void Move(string source, string destination, Config config = null)
         {
             var sourceLocation = _prefixer.PrefixPath(source);
             var destinationLocation = _prefixer.PrefixPath(destination);
 
             try
             {
+                if (FileExists(destination))
+                {
+                    Delete(destination);
+                }
+                File.Move(sourceLocation, destinationLocation);
+            }
+            catch (IOException e)
+            {
+                throw UnableToMoveFileException.FromLocationTo(sourceLocation, destinationLocation, e);
+            }
+        }
+
+        /// <inheritdoc cref="IFilesystemAdapter"/>
+        public void Copy(string source, string destination, Config config = null)
+        {
+            var sourceLocation = _prefixer.PrefixPath(source);
+            var destinationLocation = _prefixer.PrefixPath(destination);
+
+            try
+            {
+                if (FileExists(destination))
+                {
+                    Delete(destination);
+                }
+
                 File.Copy(sourceLocation, destinationLocation);
             }
             catch (IOException e)

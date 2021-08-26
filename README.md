@@ -32,14 +32,12 @@ These decisions are [described here.](https://github.com/dutch-and-bold/flystora
 
 |Adapter         |Available      |
 |----------------|---------------|
-|Local           |✅ Yes**       |
-|InMemory        |⌛️ In-progress |
+|Local           |✅ Yes         |
+|InMemory        |✅ Yes         |
 |AWS S3          |⌛️ In-progress |
 |AsyncAws S3     |⌛️ In-progress |
 |FTP             |⌛️ In-progress |
 |SFTP            |⌛️ In-progress |
-
-** Windows support for visibility (file permissions) is untested and needs work.
 
 ## Support
 

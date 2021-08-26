@@ -14,7 +14,7 @@ namespace DutchAndBold.Flystorage.Abstractions.Exceptions
 
         public static UnableToReadFileException AtLocation(string location, Exception exception)
         {
-            return new($"Unable to write file at location: {location}. {exception.Message}", location, exception);
+            return new($"Unable to read file at location: {location}. {exception.Message}", location, exception);
         }
     }
 }

@@ -81,14 +81,14 @@ namespace DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies
 
         public Visibility GetFilePermissions(string fullPath)
         {
-            return new UnixFileInfo(fullPath).FileAccessPermissions == _filePermissionsPublic
+            return new UnixFileInfo(fullPath).FileAccessPermissions.CompareTo(_filePermissionsPublic) >= 0
                 ? Visibility.Public
                 : Visibility.Private;
         }
 
         public Visibility GetDirectoryPermissions(string fullPath)
         {
-            return new UnixDirectoryInfo(fullPath).FileAccessPermissions == _filePermissionsPublic
+            return new UnixDirectoryInfo(fullPath).FileAccessPermissions.CompareTo(_directoryPermissionsPublic) >= 0
                 ? Visibility.Public
                 : Visibility.Private;
         }

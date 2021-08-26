@@ -4,9 +4,7 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
 {
     public class FileAttributes : StorageAttributes
     {
-        public string Path { get; }
-
-        public int? FileSize { get; init; }
+        public long? FileSize { get; init; }
 
         public Visibility Visibility { get; init; }
 
@@ -16,11 +14,11 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
 
         public string[] ExtraMetadata { get; init; } = Array.Empty<string>();
 
-        public FileAttributes(string path)
-        {
-            Path = path ?? throw new ArgumentNullException(nameof(path));
-        }
-
         public override bool IsFile() => true;
+
+        public FileAttributes(string path)
+            : base(path)
+        {
+        }
     }
 }

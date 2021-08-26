@@ -5,12 +5,13 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\test\DutchAndBold.Flystorage.Adapters.Tests\DutchAndBold.Flystorage.Adapters.Tests.csproj" />
       <ProjectReference Include="..\DutchAndBold.Flystorage.Abstractions\DutchAndBold.Flystorage.Abstractions.csproj" />
       <ProjectReference Include="..\DutchAndBold.Flystorage.Adapters.Shared\DutchAndBold.Flystorage.Adapters.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="MimeTypesMap" Version="1.0.8" />
+      <PackageReference Include="MimeTypeMapOfficial" Version="1.0.17" />
       <PackageReference Include="Mono.Posix.NETStandard" Version="1.0.0" />
       <PackageReference Include="System.IO.FileSystem.AccessControl" Version="5.0.0" />
     </ItemGroup>
