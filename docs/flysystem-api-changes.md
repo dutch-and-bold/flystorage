@@ -15,10 +15,10 @@ All changes made to the Flysystem API are noted below.
 
 ## FilesystemAdapter
 
-|Change                                                                            |Reason                                                                                                                                     |
-|----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-|Read defaults to return a `Stream`                                                |Working with Streams are common and accepted in consecutive API's. Returning a string uses precious memory and might set the wrong example.|
-|`ReadString` and `WriteString` extension methods are added for keeping a clean API|There are still cases where you don't need a Stream but just string, to keep the API readable this method is added for convenience       |
+|Change                                                                            |Reason                                                                                                                                        |
+|----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+|Read defaults to return a `Stream`                                                |Working with Streams are common and accepted in consecutive API's. Returning a string uses precious memory and might set the wrong example.   |
+|`ReadString` and `WriteString` extension methods are added for keeping a clean API|There are still cases where you just don't need a Stream but a string, to keep the API readable this method is added for convenience.         |
 
 ## Visibility
 
