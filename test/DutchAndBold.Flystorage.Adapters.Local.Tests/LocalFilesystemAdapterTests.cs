@@ -10,6 +10,7 @@ using DutchAndBold.Flystorage.Adapters.Local.FilePermissionStrategies;
 using DutchAndBold.Flystorage.Adapters.Local.Models;
 using DutchAndBold.Flystorage.Adapters.Shared;
 using DutchAndBold.Flystorage.Adapters.Shared.Contracts;
+using DutchAndBold.Flystorage.Adapters.Tests;
 using DutchAndBold.Flystorage.Extensions;
 using FluentAssertions;
 using Mono.Unix;
@@ -731,13 +732,13 @@ namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 
         private void CreateSymbolicLink(string sourcePath, string linkPath)
         {
-            if (_isRunningUnderWindows)
+            if (OperatingSystem.IsWindows())
             {
                 WindowsTestUtilities.CreateSymbolicLink(linkPath, sourcePath);
                 return;
             }
 
-            if (_isRunningUnderUnix)
+            if (OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
             {
                 var unixFileInfo = new UnixFileInfo(sourcePath);
                 unixFileInfo.CreateSymbolicLink(linkPath);

@@ -84,7 +84,7 @@ namespace DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests
             _adapter.WriteString(
                 "test.txt",
                 "Used to test file access.",
-                new Config(new Dictionary<string, object> { { "visibility", Visibility.Private } }));
+                new Config { { Config.OptionVisibility, Visibility.Private } });
             using var host = _hostBuilder.Start(Url);
             var result = await _client.GetAsync("test.txt");
 

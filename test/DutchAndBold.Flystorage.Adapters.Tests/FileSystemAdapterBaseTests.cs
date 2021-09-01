@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using DutchAndBold.Flystorage.Abstractions;
 using DutchAndBold.Flystorage.Abstractions.Exceptions;
 using DutchAndBold.Flystorage.Abstractions.Models;
@@ -14,77 +15,76 @@ namespace DutchAndBold.Flystorage.Adapters.Tests
 {
     public abstract class FileSystemAdapterBaseTests
     {
-        protected abstract Func<IFilesystemAdapter> FilesystemAdapterFactory { get; }
+        protected abstract Func<IFilesystemAdapterAsync> FilesystemAdapterFactory { get; }
 
         [Fact]
-        public void writing_and_reading_with_string()
+        public virtual async Task writing_and_reading_with_string()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            adapter.WriteString("path.txt", "contents", new Config());
-            var contents = adapter.ReadString("path.txt");
+            await adapter.WriteString("path.txt", "contents", new Config());
+            var contents = await adapter.ReadString("path.txt");
 
             // Assert
             contents.Should().Be("contents");
         }
 
         [Fact]
-        public void writing_a_file_with_a_stream()
+        public virtual async Task writing_a_file_with_a_stream()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            adapter.Write("path.txt", new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
-            var fileExists = adapter.FileExists("path.txt");
+            await adapter.Write("path.txt", new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
+            var fileExists = await adapter.FileExists("path.txt");
 
             // Assert
             fileExists.Should().BeTrue();
         }
 
         [Theory]
-        [InlineData("some/file[name].txt")] // a path with square brackets in filename 1
-        [InlineData("some/file[0].txt")] // a path with square brackets in filename 2
-        [InlineData("some/file[10].txt")] // a path with square brackets in filename 3
-        [InlineData("some[name]/file.txt")] // a path with square brackets in dirname 1
-        [InlineData("some[0]/file.txt")] // a path with square brackets in dirname 2
-        [InlineData("some[10]/file.txt")] // a path with square brackets in dirname 3
-        [InlineData("some/file{name}.txt")] // a path with curly brackets in filename 1
-        [InlineData("some/file{0}.txt")] // a path with curly brackets in filename 2
-        [InlineData("some/file{10}.txt")] // a path with curly brackets in filename 3
-        [InlineData("some{name}/filename.txt")] // a path with curly brackets in dirname 1
-        [InlineData("some{0}/filename.txt")] // a path with curly brackets in dirname 2
-        [InlineData("some{10}/filename.txt")] // a path with curly brackets in dirname 3
-        [InlineData("some dir/filename.txt")] // a path with space in dirname
-        [InlineData("somedir/file name.txt")] // a path with space in filename
-        [InlineData("some-dir/file.txt")] // a path mixed backward slash
-        public void writing_and_reading_files_with_special_path(string path)
+        [InlineData("some/file[name].txt", 1)] // a path with square brackets in filename 1
+        [InlineData("some/file[0].txt", 2)] // a path with square brackets in filename 2
+        [InlineData("some/file[10].txt", 3)] // a path with square brackets in filename 3
+        [InlineData("some[name]/file.txt", 4)] // a path with square brackets in dirname 1
+        [InlineData("some[0]/file.txt", 5)] // a path with square brackets in dirname 2
+        [InlineData("some[10]/file.txt", 6)] // a path with square brackets in dirname 3
+        [InlineData("some/file{name}.txt", 7)] // a path with curly brackets in filename 1
+        [InlineData("some/file{0}.txt", 8)] // a path with curly brackets in filename 2
+        [InlineData("some/file{10}.txt", 9)] // a path with curly brackets in filename 3
+        [InlineData("some{name}/filename.txt", 10)] // a path with curly brackets in dirname 1
+        [InlineData("some{0}/filename.txt", 11)] // a path with curly brackets in dirname 2
+        [InlineData("some{10}/filename.txt", 12)] // a path with curly brackets in dirname 3
+        [InlineData("some dir/filename.txt", 13)] // a path with space in dirname
+        [InlineData("somedir/file name.txt", 14)] // a path with space in filename
+        [InlineData("some-dir/file.txt", 15)] // a path mixed backward slash
+        public virtual async Task writing_and_reading_files_with_special_path(string path, int unique)
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            adapter.Write(path, new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
-            var stream = adapter.Read(path);
-            var contents = new StreamReader(stream).ReadToEnd();
-            var listedContents = adapter.ListContents("", true);
+            await adapter.Write(path, new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
+            var stream = await adapter.Read(path);
+            var contents = await new StreamReader(stream).ReadToEndAsync();
 
             // Assert
-            listedContents.Should().HaveCount(2);
             contents.Should().Be("contents");
+            unique.Should().BePositive(); // Work-around to get the test name to be different.
         }
 
         [Fact]
-        public void fetching_file_size()
+        public virtual async Task fetching_file_size()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out var path, out _);
+            var (path, _) = await GivenWeHaveAnExistingFile(adapter);
 
             // Act
-            var attributes = adapter.FileSize(path);
+            var attributes = await adapter.FileSize(path);
 
             // Assert
             attributes.Should().BeOfType<FileAttributes>();
@@ -94,266 +94,258 @@ namespace DutchAndBold.Flystorage.Adapters.Tests
         [Theory]
         [InlineData(Visibility.Public)]
         [InlineData(Visibility.Private)]
-        public void setting_visibility(Visibility visibilityToSet)
+        public virtual async Task setting_visibility(Visibility visibilityToSet)
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(
+            var (path, _) = await GivenWeHaveAnExistingFile(
                 adapter,
-                out var path,
-                out _,
                 withConfig: new Config { { Config.OptionVisibility, Visibility.Public } });
 
             // Act
-            adapter.SetVisibility(path, visibilityToSet);
+            await adapter.SetVisibility(path, visibilityToSet);
 
             // Assert
-            adapter.Visibility(path).Visibility.Should().Be(visibilityToSet);
+            (await adapter.Visibility(path)).Visibility.Should().Be(visibilityToSet);
         }
 
         [Fact]
-        public void fetching_file_size_of_a_directory()
+        public virtual async Task fetching_file_size_of_a_directory()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            adapter.CreateDirectory("path");
+            await adapter.CreateDirectory("path");
 
             // Act
-            Action action = () => adapter.FileSize("path");
+            Func<Task> action = () => adapter.FileSize("path");
 
             // Assert
-            action.Should().Throw<UnableToRetrieveMetadataException>();
+            await action.Should().ThrowAsync<UnableToRetrieveMetadataException>();
         }
 
         [Fact]
-        public void fetching_file_size_of_non_existing_file()
-        {
-            // Arrange
-            var adapter = FilesystemAdapterFactory.Invoke();
-
-            // Act
-            Action action = () => adapter.FileSize("non-existing-file.txt");
-
-            // Assert
-            action.Should().Throw<UnableToRetrieveMetadataException>();
-        }
-
-        [Fact]
-        public void fetching_last_modified_of_non_existing_file()
+        public virtual async Task fetching_file_size_of_non_existing_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.LastModified("non-existing-file.txt");
+            Func<Task> action = () => adapter.FileSize("non-existing-file.txt");
 
             // Assert
-            action.Should().Throw<UnableToRetrieveMetadataException>();
+            await action.Should().ThrowAsync<UnableToRetrieveMetadataException>();
         }
 
         [Fact]
-        public void fetching_visibility_of_non_existing_file()
+        public virtual async Task fetching_last_modified_of_non_existing_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.Visibility("non-existing-file.txt");
+            Func<Task> action = () => adapter.LastModified("non-existing-file.txt");
 
             // Assert
-            action.Should().Throw<UnableToRetrieveMetadataException>();
+            await action.Should().ThrowAsync<UnableToRetrieveMetadataException>();
         }
 
         [Fact]
-        public void fetching_the_mime_type_of_an_svg_file()
+        public virtual async Task fetching_visibility_of_non_existing_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out var path, out _, withPath: "file.svg");
 
             // Act
-            var fileAttributes = adapter.MimeType(path);
+            Func<Task> action = () => adapter.Visibility("non-existing-file.txt");
+
+            // Assert
+            await action.Should().ThrowAsync<UnableToRetrieveMetadataException>();
+        }
+
+        [Fact]
+        public virtual async Task fetching_the_mime_type_of_an_svg_file()
+        {
+            // Arrange
+            var adapter = FilesystemAdapterFactory.Invoke();
+            var (path, _) = await GivenWeHaveAnExistingFile(adapter, "file.svg");
+
+            // Act
+            var fileAttributes = await adapter.MimeType(path);
 
             // Assert
             fileAttributes.MimeType.Should().StartWith("image/svg");
         }
 
         [Fact]
-        public void fetching_mime_type_of_non_existing_file()
+        public virtual async Task fetching_mime_type_of_non_existing_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.MimeType("non-existing-file.txt");
+            Func<Task> action = () => adapter.MimeType("non-existing-file.txt");
 
             // Assert
-            action.Should().Throw<UnableToRetrieveMetadataException>();
+            await action.Should().ThrowAsync<UnableToRetrieveMetadataException>();
         }
 
         [Fact]
-        public void fetching_unknown_mime_type_of_a_file()
+        public virtual async Task fetching_unknown_mime_type_of_a_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out var path, out _, withPath: "file.000xyz");
+            var (path, _) = await GivenWeHaveAnExistingFile(adapter, "file.000xyz");
 
             // Act
-            Action action = () => adapter.MimeType(path);
+            Func<Task> action = () => adapter.MimeType(path);
 
             // Assert
-            action.Should().Throw<UnableToRetrieveMetadataException>();
+            await action.Should().ThrowAsync<UnableToRetrieveMetadataException>();
         }
 
         [Fact]
-        public void listing_a_toplevel_directory()
+        public virtual async Task listing_a_toplevel_directory()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out _, out _, withPath: "path1.txt");
-            GivenWeHaveAnExistingFile(adapter, out _, out _, withPath: "path2.txt");
+            await GivenWeHaveAnExistingFile(adapter, "path1.txt");
+            await GivenWeHaveAnExistingFile(adapter, "path2.txt");
 
             // Act
-            var contents = adapter.ListContents("", true);
+            var contents = await adapter.ListContents("", true).ToListAsync();
 
             // Assert
             contents.Should().HaveCount(2);
         }
 
         [Fact]
-        public void writing_and_reading_with_streams()
+        public virtual async Task writing_and_reading_with_streams()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            adapter.Write("path.txt", new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
-            var stream = adapter.Read("path.txt");
-            var contents = new StreamReader(stream).ReadToEnd();
+            await adapter.Write("path.txt", new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
+            var stream = await adapter.Read("path.txt");
+            var contents = await new StreamReader(stream).ReadToEndAsync();
 
             // Assert
             contents.Should().Be("contents");
         }
 
         [Fact]
-        public void setting_visibility_on_a_file_that_does_not_exist()
+        public virtual async Task setting_visibility_on_a_file_that_does_not_exist()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.SetVisibility("path.txt", Visibility.Private);
+            Func<Task> action = () => adapter.SetVisibility("path.txt", Visibility.Private);
 
             // Assert
-            action.Should().Throw<UnableToSetVisibilityException>();
+            await action.Should().ThrowAsync<UnableToSetVisibilityException>();
         }
 
         [Theory]
         [InlineData(Visibility.Public)]
         [InlineData(Visibility.Private)]
-        public void copying_a_file(Visibility visibility)
+        public virtual async Task copying_a_file(Visibility visibility)
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(
+            var (sourcePath, contentsToAssert) = await GivenWeHaveAnExistingFile(
                 adapter,
-                out var sourcePath,
-                out var contentsToAssert,
-                withPath: "source.txt",
-                withContents: "contents to be copied",
-                withConfig: new Config { { Config.OptionVisibility, visibility } });
+                "source.txt",
+                "contents to be copied");
             const string destinationPath = "destination.txt";
 
             // Act
-            adapter.Copy(sourcePath, destinationPath);
+            await adapter.Copy(sourcePath, destinationPath, new Config { { Config.OptionVisibility, visibility } });
 
             // Assert
-            adapter.FileExists(destinationPath).Should().BeTrue();
-            adapter.Visibility(destinationPath).Visibility.Should().Be(visibility);
-            adapter.ReadString(destinationPath).Should().Be(contentsToAssert);
+            (await adapter.FileExists(destinationPath)).Should().BeTrue();
+            (await adapter.Visibility(destinationPath)).Visibility.Should().Be(visibility);
+            (await adapter.ReadString(destinationPath)).Should().Be(contentsToAssert);
         }
 
         [Theory]
         [InlineData(Visibility.Public)]
         [InlineData(Visibility.Private)]
-        public void moving_a_file(Visibility visibility)
+        public virtual async Task moving_a_file(Visibility visibility)
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(
+            var (sourcePath, contentsToAssert) = await GivenWeHaveAnExistingFile(
                 adapter,
-                out var sourcePath,
-                out var contentsToAssert,
-                withPath: "source.txt",
-                withContents: "contents to be moved",
-                withConfig: new Config { { Config.OptionVisibility, visibility } });
+                "source.txt",
+                "contents to be moved");
             const string destinationPath = "destination.txt";
 
             // Act
-            adapter.Move(sourcePath, destinationPath, new Config());
+            await adapter.Move(sourcePath, destinationPath, new Config { { Config.OptionVisibility, visibility } });
 
             // Assert
-            adapter.FileExists(sourcePath).Should().BeFalse();
-            adapter.FileExists(destinationPath).Should().BeTrue();
-            adapter.Visibility(destinationPath).Visibility.Should().Be(visibility);
-            adapter.ReadString(destinationPath).Should().Be(contentsToAssert);
+            (await adapter.FileExists(sourcePath)).Should().BeFalse();
+            (await adapter.FileExists(destinationPath)).Should().BeTrue();
+            (await adapter.Visibility(destinationPath)).Visibility.Should().Be(visibility);
+            (await adapter.ReadString(destinationPath)).Should().Be(contentsToAssert);
         }
 
         [Fact]
-        public void reading_a_file_that_does_not_exist()
+        public virtual async Task reading_a_file_that_does_not_exist()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.Read("path.txt");
+            Func<Task> action = () => adapter.Read("path.txt");
 
             // Assert
-            action.Should().Throw<UnableToReadFileException>();
+            await action.Should().ThrowAsync<UnableToReadFileException>();
         }
 
         [Fact]
-        public void moving_a_file_that_does_not_exist()
+        public virtual async Task moving_a_file_that_does_not_exist()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.Move("source.txt", "destination.txt");
+            Func<Task> action = () => adapter.Move("source.txt", "destination.txt");
 
             // Assert
-            action.Should().Throw<UnableToMoveFileException>();
+            await action.Should().ThrowAsync<UnableToMoveFileException>();
         }
 
         [Fact]
-        public void trying_to_delete_a_non_existing_file()
+        public virtual async Task trying_to_delete_a_non_existing_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            adapter.Delete("path.txt");
+            await adapter.Delete("path.txt");
 
             // Assert
-            adapter.FileExists("path.txt").Should().BeFalse();
+            (await adapter.FileExists("path.txt")).Should().BeFalse();
         }
 
         [Fact]
-        public void checking_if_files_exist()
+        public virtual async Task checking_if_files_exist()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
             const string path = "some/path.txt";
 
             // Act
-            adapter.Write(path, new MemoryStream(), new Config());
+            await adapter.Write(path, new MemoryStream(), new Config());
 
             // Assert
-            adapter.FileExists(path).Should().BeTrue();
+            (await adapter.FileExists(path)).Should().BeTrue();
         }
 
         [Fact]
-        public void fetching_last_modified()
+        public virtual async Task fetching_last_modified()
         {
             // Arrange
             var startOfTest = DateTimeOffset.Now.Subtract(TimeSpan.FromSeconds(1));
@@ -361,209 +353,208 @@ namespace DutchAndBold.Flystorage.Adapters.Tests
             const string path = "some/path.txt";
 
             // Act
-            adapter.Write(path, new MemoryStream(), new Config());
+            await adapter.Write(path, new MemoryStream(), new Config());
 
             // Assert
-            adapter.LastModified(path).LastModified.Should().BeAfter(startOfTest);
+            (await adapter.LastModified(path)).LastModified.Should().BeAfter(startOfTest);
         }
 
         [Fact]
-        public void failing_to_read_a_non_existing_file_into_a_stream()
+        public virtual async Task failing_to_read_a_non_existing_file_into_a_stream()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.Read("source.txt");
+            Func<Task> action = () => adapter.Read("source.txt");
 
             // Assert
-            action.Should().Throw<UnableToReadFileException>();
+            await action.Should().ThrowAsync<UnableToReadFileException>();
         }
 
         [Fact]
-        public void failing_to_read_a_non_existing_file()
+        public virtual async Task failing_to_read_a_non_existing_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            Action action = () => adapter.ReadString("source.txt");
+            Func<Task> action = () => adapter.ReadString("source.txt");
 
             // Assert
-            action.Should().Throw<UnableToReadFileException>();
+            await action.Should().ThrowAsync<UnableToReadFileException>();
         }
 
         [Fact]
-        public void writing_a_file_with_an_empty_stream()
+        public virtual async Task writing_a_file_with_an_empty_stream()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
             const string path = "some/path.txt";
 
             // Act
-            adapter.Write(path, new MemoryStream(), new Config());
+            await adapter.Write(path, new MemoryStream(), new Config());
 
             // Assert
-            adapter.ReadString(path).Should().Be(string.Empty);
+            (await adapter.ReadString(path)).Should().Be(string.Empty);
         }
 
         [Fact]
-        public void reading_a_file()
+        public virtual async Task reading_a_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out var path, out var contentsToAssert, withContents: "contents");
+            var (path, contentsToAssert) = await GivenWeHaveAnExistingFile(adapter, withContents: "contents");
 
             // Act
-            var contents = adapter.ReadString(path);
+            var contents = await adapter.ReadString(path);
 
             // Assert
             contents.Should().Be(contentsToAssert);
         }
 
         [Fact]
-        public void reading_a_file_with_a_stream()
+        public virtual async Task reading_a_file_with_a_stream()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out var path, out var contentsToAssert, withContents: "contents");
+            var (path, contentsToAssert) = await GivenWeHaveAnExistingFile(adapter, withContents: "contents");
 
             // Act
-            var stream = adapter.Read(path);
+            var stream = await adapter.Read(path);
 
             // Assert
-            new StreamReader(stream).ReadToEnd().Should().Be(contentsToAssert);
+            (await new StreamReader(stream).ReadToEndAsync()).Should().Be(contentsToAssert);
         }
 
         [Fact]
-        public void overwriting_a_file()
+        public virtual async Task overwriting_a_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(
+            var (path, _) = await GivenWeHaveAnExistingFile(
                 adapter,
-                out var path,
-                out _,
                 "path.txt",
                 "contents",
                 new Config { { Config.OptionVisibility, Visibility.Public } });
 
             // Act
-            adapter.Write(
+            await adapter.Write(
                 path,
                 new MemoryStream(Encoding.UTF8.GetBytes("new contents")),
                 new Config { { Config.OptionVisibility, Visibility.Private } });
 
             // Assert
-            adapter.ReadString(path).Should().Be("new contents");
-            adapter.Visibility(path).Visibility.Should().Be(Visibility.Private);
+            (await adapter.ReadString(path)).Should().Be("new contents");
+            (await adapter.Visibility(path)).Visibility.Should().Be(Visibility.Private);
         }
 
         [Fact]
-        public void deleting_a_file()
+        public virtual async Task deleting_a_file()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out var path, out _);
+            var (path, _) = await GivenWeHaveAnExistingFile(adapter);
 
             // Act
-            adapter.Delete(path);
+            await adapter.Delete(path);
 
             // Assert
-            adapter.FileExists(path).Should().BeFalse();
+            (await adapter.FileExists(path)).Should().BeFalse();
         }
 
         [Fact]
-        public void listing_contents_shallow()
+        public virtual async Task listing_contents_shallow()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingFile(adapter, out _, out _, "some/0-path.txt");
-            GivenWeHaveAnExistingFile(adapter, out _, out _, "some/1-nested/path.txt");
+            await GivenWeHaveAnExistingFile(adapter, "some/0-path.txt");
+            await GivenWeHaveAnExistingFile(adapter, "some/1-nested/path.txt");
+            await GivenWeHaveAnExistingFile(adapter, "some/1-nested-2/2-nested/path.txt");
 
             // Act
-            var contents = adapter.ListContents("some", false).ToList();
+            var contents = await adapter.ListContents("some", false).ToListAsync();
 
             // Assert
-            contents.Should().HaveCount(2);
+            contents.Should().HaveCount(3);
 
             contents.Should().Contain(o => o.Path == "some/1-nested");
             contents.Should().Contain(o => o.Path == "some/0-path.txt");
 
             contents.First(o => o.Path == "some/1-nested").IsDirectory().Should().BeTrue();
+            contents.First(o => o.Path == "some/1-nested-2").IsDirectory().Should().BeTrue();
             contents.First(o => o.Path == "some/0-path.txt").IsFile().Should().BeTrue();
         }
 
         [Fact]
-        public void listing_contents_recursive()
+        public virtual async Task listing_contents_recursive()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
-            GivenWeHaveAnExistingDirectory(adapter, out _);
-            GivenWeHaveAnExistingFile(adapter, out _, out _, withPath: "path/file.txt");
+            await GivenWeHaveAnExistingDirectory(adapter);
+            await GivenWeHaveAnExistingFile(adapter, "path/file.txt");
 
             // Act
-            var contents = adapter.ListContents("", true);
+            var contents = await adapter.ListContents("", true).ToListAsync();
 
             // Assert
             contents.Should().HaveCount(2);
         }
 
         [Fact]
-        public void creating_a_directory()
+        public virtual async Task creating_a_directory()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
             const string path = "path";
 
             // Act
-            adapter.CreateDirectory(path);
+            await adapter.CreateDirectory(path);
 
             // Assert
-            var contents = adapter.ListContents("", false).ToList();
+            var contents = await adapter.ListContents("", false).ToListAsync();
             contents.Should().HaveCount(1);
             contents.First().IsDirectory().Should().BeTrue();
             contents.First().Path.Should().Be(path);
         }
 
         [Fact]
-        public void copying_a_file_with_collision()
+        public virtual async Task copying_a_file_with_collision()
         {
             // Arrange
             var adapter = FilesystemAdapterFactory.Invoke();
 
             // Act
-            adapter.Write("path.txt", new MemoryStream(Encoding.UTF8.GetBytes("new contents")), new Config());
-            adapter.Write("new-path.txt", new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
-            adapter.Copy("path.txt", "new-path.txt", new Config());
+            await adapter.Write("path.txt", new MemoryStream(Encoding.UTF8.GetBytes("new contents")), new Config());
+            await adapter.Write("new-path.txt", new MemoryStream(Encoding.UTF8.GetBytes("contents")), new Config());
+            await adapter.Copy("path.txt", "new-path.txt", new Config());
 
             // Assert
-            adapter.ReadString("path.txt").Should().Be("new contents");
+            (await adapter.ReadString("path.txt")).Should().Be("new contents");
         }
 
-        private static void GivenWeHaveAnExistingFile(
-            IFilesystemAdapter adapter,
-            out string path,
-            out string contents,
+        private static async Task<Tuple<string, string>> GivenWeHaveAnExistingFile(
+            IFilesystemAdapterAsync adapter,
             string withPath = "path.txt",
             string withContents = "contents",
             Config withConfig = null)
         {
-            adapter.Write(withPath, new MemoryStream(Encoding.UTF8.GetBytes(withContents)), withConfig ?? new Config());
+            await adapter.Write(
+                withPath,
+                new MemoryStream(Encoding.UTF8.GetBytes(withContents)),
+                withConfig ?? new Config());
 
-            path = withPath;
-            contents = withContents;
+            return new Tuple<string, string>(withPath, withContents);
         }
 
-        private static void GivenWeHaveAnExistingDirectory(
-            IFilesystemAdapter adapter,
-            out string path,
+        private static async Task<Tuple<string>> GivenWeHaveAnExistingDirectory(
+            IFilesystemAdapterAsync adapter,
             string withPath = "path",
             Config withConfig = null)
         {
-            adapter.CreateDirectory(withPath, withConfig ?? new Config());
+            await adapter.CreateDirectory(withPath, withConfig ?? new Config());
 
-            path = withPath;
+            return new Tuple<string>(withPath);
         }
     }
 }

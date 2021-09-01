@@ -7,13 +7,13 @@ using Xunit.Abstractions;
 
 namespace DutchAndBold.Flystorage.Adapters.Local.Tests
 {
-    public class LocalFilesystemBaseTests : FileSystemAdapterBaseTests
+    public class LocalFilesystemBaseTests : SyncFilesystemAdapterBaseTests
     {
-        protected override Func<IFilesystemAdapter> FilesystemAdapterFactory { get; }
+        protected override Func<IFilesystemAdapter> SyncFilesystemAdapterFactory { get; }
 
         public LocalFilesystemBaseTests(ITestOutputHelper testOutputHelper)
         {
-            FilesystemAdapterFactory = () => new LocalFilesystemAdapter(
+            SyncFilesystemAdapterFactory = () => new LocalFilesystemAdapter(
                 new PathPrefixer($"{Environment.CurrentDirectory}/.test/{testOutputHelper.GetTestName()}"),
                 new FilePermissionStrategyFactory().CreateForOS());
         }

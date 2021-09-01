@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\DutchAndBold.Flystorage.Extensions\DutchAndBold.Flystorage.Extensions.csproj" />
+      <ProjectReference Include="..\..\src\DutchAndBold.Flystorage.Extensions\DutchAndBold.Flystorage.Extensions.csproj" />
       <ProjectReference Include="..\..\src\DutchAndBold.Flystorage.Adapters.Local\DutchAndBold.Flystorage.Adapters.Local.csproj" />
     </ItemGroup>
 

@@ -8,7 +8,7 @@ namespace DutchAndBold.Flystorage.Adapters.Shared
 
         private readonly char _separator;
 
-        public PathPrefixer(string prefix, char separator = '/')
+        public PathPrefixer(string prefix = "", char separator = '/')
         {
             _prefix = prefix.TrimEnd('\\', '/');
             _separator = separator;

@@ -19,21 +19,34 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Abs
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_solutionItems", "_solutionItems", "{E486884A-25C7-49B7-8F1C-28C00E80480E}"
 ProjectSection(SolutionItems) = preProject
-	src\Directory.Build.props = src\Directory.Build.props
 	README.md = README.md
 	LICENSE = LICENSE
 	version.json = version.json
+	.editorconfig = .editorconfig
+	.gitignore = .gitignore
+	DutchAndBold.Flystorage.sln.DotSettings = DutchAndBold.Flystorage.sln.DotSettings
 EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests", "test\DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests\DutchAndBold.Flystorage.Adapters.Local.WebServer.Tests.csproj", "{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.InMemory", "src\DutchAndBold.Flystorage.Adapters.InMemory\DutchAndBold.Flystorage.Adapters.InMemory.csproj", "{2D878AC1-327F-4A3F-AC8D-F764DA4EAE5E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Extensions", "DutchAndBold.Flystorage.Extensions\DutchAndBold.Flystorage.Extensions.csproj", "{63F5548C-C313-4C7B-83A0-CEA32D382DD3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Extensions", "src\DutchAndBold.Flystorage.Extensions\DutchAndBold.Flystorage.Extensions.csproj", "{63F5548C-C313-4C7B-83A0-CEA32D382DD3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.InMemory.Tests", "test\DutchAndBold.Flystorage.Adapters.InMemory.Tests\DutchAndBold.Flystorage.Adapters.InMemory.Tests.csproj", "{E035D1CB-6E74-4401-AA2A-0BFFBE94508D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.Tests", "test\DutchAndBold.Flystorage.Adapters.Tests\DutchAndBold.Flystorage.Adapters.Tests.csproj", "{AA2FE025-D872-4FD8-AF38-A736538FE30D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{FDEBA291-460E-4C85-AADC-8B3B39994407}"
+ProjectSection(SolutionItems) = preProject
+	src\Directory.Build.props = src\Directory.Build.props
+EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.AwsS3", "src\DutchAndBold.Flystorage.Adapters.AwsS3\DutchAndBold.Flystorage.Adapters.AwsS3.csproj", "{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage.Adapters.AwsS3.Tests", "test\DutchAndBold.Flystorage.Adapters.AwsS3.Tests\DutchAndBold.Flystorage.Adapters.AwsS3.Tests.csproj", "{41CA1717-4465-4A8C-B18F-1894D1B215CB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DutchAndBold.Flystorage", "src\DutchAndBold.Flystorage\DutchAndBold.Flystorage.csproj", "{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -180,6 +193,42 @@ Global
 		{AA2FE025-D872-4FD8-AF38-A736538FE30D}.Release|x64.Build.0 = Release|Any CPU
 		{AA2FE025-D872-4FD8-AF38-A736538FE30D}.Release|x86.ActiveCfg = Release|Any CPU
 		{AA2FE025-D872-4FD8-AF38-A736538FE30D}.Release|x86.Build.0 = Release|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Debug|x64.Build.0 = Debug|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Debug|x86.Build.0 = Debug|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Release|x64.ActiveCfg = Release|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Release|x64.Build.0 = Release|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Release|x86.ActiveCfg = Release|Any CPU
+		{9CC86586-31EE-4C23-B27D-1C7A072D7B2E}.Release|x86.Build.0 = Release|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Debug|x64.Build.0 = Debug|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Debug|x86.Build.0 = Debug|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Release|x64.ActiveCfg = Release|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Release|x64.Build.0 = Release|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Release|x86.ActiveCfg = Release|Any CPU
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB}.Release|x86.Build.0 = Release|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Debug|x64.Build.0 = Debug|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Debug|x86.Build.0 = Debug|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Release|x64.ActiveCfg = Release|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Release|x64.Build.0 = Release|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Release|x86.ActiveCfg = Release|Any CPU
+		{348A46E2-8C56-4CAF-A0BC-7DECEB2D0D78}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{473C5959-AB6B-4C69-9B70-2428C9315856} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
@@ -188,5 +237,7 @@ Global
 		{95C8C6C7-3B31-4A9C-8291-BFAAA9D7B2D5} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
 		{E035D1CB-6E74-4401-AA2A-0BFFBE94508D} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
 		{AA2FE025-D872-4FD8-AF38-A736538FE30D} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
+		{FDEBA291-460E-4C85-AADC-8B3B39994407} = {E486884A-25C7-49B7-8F1C-28C00E80480E}
+		{41CA1717-4465-4A8C-B18F-1894D1B215CB} = {AE0984FC-A7C1-425E-8C34-8E36C2071B28}
 	EndGlobalSection
 EndGlobal

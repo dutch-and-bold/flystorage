@@ -6,6 +6,7 @@ using DutchAndBold.Flystorage.Abstractions;
 using DutchAndBold.Flystorage.Abstractions.Exceptions;
 using DutchAndBold.Flystorage.Abstractions.Models;
 using DutchAndBold.Flystorage.Adapters.InMemory.Exceptions;
+using DutchAndBold.Flystorage.Adapters.Shared.Contracts;
 using MimeTypes;
 using FileAttributes = DutchAndBold.Flystorage.Abstractions.Models.FileAttributes;
 
@@ -13,14 +14,19 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory
 {
     public class InMemoryFilesystemAdapter : IFilesystemAdapter
     {
+        private readonly IDirectorySplitter _directorySplitter;
+
         private readonly Dictionary<string, InMemoryFile> _files;
 
         private const char Root = DirectorySeparator;
 
         private const char DirectorySeparator = '/';
 
-        public InMemoryFilesystemAdapter(Dictionary<string, InMemoryFile> files = null)
+        public InMemoryFilesystemAdapter(
+            IDirectorySplitter directorySplitter,
+            Dictionary<string, InMemoryFile> files = null)
         {
+            _directorySplitter = directorySplitter;
             _files = files ?? new Dictionary<string, InMemoryFile>();
         }
 
@@ -147,10 +153,15 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory
 
         public IEnumerable<StorageAttributes> ListContents(string path, bool deep)
         {
-            var location = GetInMemoryLocation(path);
+            var location = GetInMemoryDirectoryLocation(path);
 
             bool IsPathRequested(string p)
             {
+                if (p.Length < location.Length)
+                {
+                    return false;
+                }
+
                 var isContainedWithinLocation = p.StartsWith(location);
                 var isDeepPath = p[location.Length..]
                     .TrimStart(DirectorySeparator)
@@ -165,14 +176,10 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory
                 .Select(f => new FileAttributes(f.Key.TrimStart(Root)))
                 .ToList();
 
-            var greatestPath = _files
-                .Keys
-                .OrderByDescending(p => p.Length)
-                .FirstOrDefault();
-
-            var directories = WalkStringPath(greatestPath, location)
+            var directories = _directorySplitter.SplitFromPaths(_files.Keys.ToArray())
+                .Where(p => p != "/")
                 .Where(IsPathRequested)
-                .Select(d => new DirectoryAttributes(d.TrimStart(Root)))
+                .Select(d => new DirectoryAttributes(d.TrimStart('/')))
                 .ToList();
 
             return files.Concat(directories);
@@ -193,9 +200,9 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory
 
             try
             {
-                EnsureFileExists(source, out var file);
-                _files.Remove(sourceLocation);
-                _files.Add(destinationLocation, file);
+                EnsureFileExists(source);
+                Copy(source, destination, config);
+                Delete(source);
             }
             catch (InMemoryFileDoesNotExistException e)
             {
@@ -216,7 +223,11 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory
                     _files.Remove(destinationLocation);
                 }
 
-                _files.Add(destinationLocation, file.Copy());
+                _files.Add(
+                    destinationLocation,
+                    file.Copy(
+                        config?.Get(Config.OptionVisibility, file.Visibility) ??
+                        Abstractions.Models.Visibility.Public));
             }
             catch (InMemoryFileDoesNotExistException e)
             {
@@ -246,29 +257,8 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory
 
         private static string GetInMemoryLocation(string path) => Root + path.TrimStart(Root);
 
-
         private static string GetInMemoryDirectoryLocation(string path) =>
             GetInMemoryLocation(path).TrimEnd(DirectorySeparator) +
             DirectorySeparator;
-
-        private static string SubstractDirectoryPath(string filePath) => Path.GetDirectoryName(filePath);
-
-        private List<string> WalkStringPath(string path, string stopAtPath = null)
-        {
-            var directories = new List<string>();
-
-            while (!string.IsNullOrEmpty(path))
-            {
-                path = path[..path.LastIndexOf('/')];
-                if (stopAtPath != null && path == stopAtPath.TrimEnd(DirectorySeparator))
-                {
-                    break;
-                }
-
-                directories.Add(path);
-            }
-
-            return directories;
-        }
     }
 }

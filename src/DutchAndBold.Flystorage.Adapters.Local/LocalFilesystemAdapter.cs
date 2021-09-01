@@ -281,7 +281,11 @@ namespace DutchAndBold.Flystorage.Adapters.Local
                 {
                     Delete(destination);
                 }
+
                 File.Move(sourceLocation, destinationLocation);
+                SetVisibility(
+                    destination,
+                    config?.Get<Visibility>(Config.OptionVisibility) ?? Abstractions.Models.Visibility.Public);
             }
             catch (IOException e)
             {
@@ -303,6 +307,9 @@ namespace DutchAndBold.Flystorage.Adapters.Local
                 }
 
                 File.Copy(sourceLocation, destinationLocation);
+                SetVisibility(
+                    destination,
+                    config?.Get<Visibility>(Config.OptionVisibility) ?? Abstractions.Models.Visibility.Public);
             }
             catch (IOException e)
             {

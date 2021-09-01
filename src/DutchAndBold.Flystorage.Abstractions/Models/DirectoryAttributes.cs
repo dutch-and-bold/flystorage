@@ -7,7 +7,7 @@ namespace DutchAndBold.Flystorage.Abstractions.Models
 
         public string Visibility { get; init; }
 
-        public int? LastModified { get; init; }
+        public DateTimeOffset? LastModified { get; init; }
 
         public string[] ExtraMetadata { get; init; } = Array.Empty<string>();
 

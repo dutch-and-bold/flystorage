@@ -34,8 +34,7 @@ These decisions are [described here.](https://github.com/dutch-and-bold/flystora
 |----------------|---------------|
 |Local           |✅ Yes         |
 |InMemory        |✅ Yes         |
-|AWS S3          |⌛️ In-progress |
-|AsyncAws S3     |⌛️ In-progress |
+|AWS S3          |✅ Yes         |
 |FTP             |⌛️ In-progress |
 |SFTP            |⌛️ In-progress |
 

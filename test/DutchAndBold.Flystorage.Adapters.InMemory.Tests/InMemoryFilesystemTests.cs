@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using DutchAndBold.Flystorage.Abstractions.Exceptions;
 using DutchAndBold.Flystorage.Abstractions.Models;
+using DutchAndBold.Flystorage.Adapters.Shared;
 using DutchAndBold.Flystorage.Extensions;
 using FluentAssertions;
 using Xunit;
@@ -17,7 +18,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void getting_mimetype_on_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.MimeType("path.txt");
@@ -30,7 +31,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void getting_last_modified_on_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.LastModified("path.txt");
@@ -43,7 +44,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void getting_file_size_on_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.FileSize("path.txt");
@@ -60,7 +61,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             // Arrange
             var files = new Dictionary<string, InMemoryFile> { { path, new InMemoryFile(new MemoryStream()) } };
 
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             adapter.Delete(pathToDelete);
@@ -80,7 +81,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
                 { "/a/b/path.txt", new InMemoryFile(new MemoryStream()) },
                 { "/a/b/c/path.txt", new InMemoryFile(new MemoryStream()) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             adapter.DeleteDirectory("a/b");
@@ -96,7 +97,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void creating_a_directory_does_nothing()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.CreateDirectory("something", new Config());
@@ -112,7 +113,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             const string path = "/test.txt";
             const string contents = "contents";
             var files = new Dictionary<string, InMemoryFile>();
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             adapter.Write(path, new MemoryStream(Encoding.UTF8.GetBytes(contents)), new Config());
@@ -132,7 +133,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             {
                 { path, new InMemoryFile(new MemoryStream(Encoding.UTF8.GetBytes(contents))) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             var stream = adapter.Read(path);
@@ -145,7 +146,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void reading_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.ReadString("path.txt");
@@ -158,7 +159,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void stream_reading_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.Read("path.txt");
@@ -180,7 +181,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
                 { "/a/path.txt", new InMemoryFile(new MemoryStream()) },
                 { "/a/b/c/path.txt", new InMemoryFile(new MemoryStream()) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             var listing = adapter.ListContents(listPath, true).ToList();
@@ -215,7 +216,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
                 { "/a/b/path.txt", new InMemoryFile(new MemoryStream()) },
                 { "/a/b/c/path.txt", new InMemoryFile(new MemoryStream()) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             var listing = adapter.ListContents(listPath, false).ToList();
@@ -238,7 +239,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             {
                 { "/path.txt", new InMemoryFile(new MemoryStream()) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             adapter.Move("path.txt", "new-path.txt", new Config());
@@ -256,7 +257,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
                 { "/path.txt", new InMemoryFile(new MemoryStream()) },
                 { "/new-path.txt", new InMemoryFile(new MemoryStream()) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             Action action = () => adapter.Move("path.txt", "new-path.txt", new Config());
@@ -269,7 +270,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void trying_to_move_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.Move("path.txt", "new-path.txt", new Config());
@@ -286,7 +287,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             {
                 { "/path.txt", new InMemoryFile(new MemoryStream()) }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             adapter.Copy("path.txt", "new-path.txt", new Config());
@@ -300,7 +301,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void trying_to_copy_a_non_existing_file()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             Action action = () => adapter.Copy("path.txt", "new-path.txt", new Config());
@@ -313,7 +314,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
         public void not_listing_directory_placeholders()
         {
             // Arrange
-            var adapter = new InMemoryFilesystemAdapter();
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter());
 
             // Act
             adapter.CreateDirectory("directory", new Config());
@@ -333,7 +334,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             {
                 { path, new InMemoryFile(File.OpenRead("TestFiles/flysystem.svg")) { LastModified = date } }
             };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             var fileExists = adapter.FileExists(path);
@@ -354,7 +355,7 @@ namespace DutchAndBold.Flystorage.Adapters.InMemory.Tests
             // Arrange
             const string path = "/test.000xyz";
             var files = new Dictionary<string, InMemoryFile> { { path, new InMemoryFile(new MemoryStream()) } };
-            var adapter = new InMemoryFilesystemAdapter(files);
+            var adapter = new InMemoryFilesystemAdapter(new DirectorySplitter(), files);
 
             // Act
             Action action = () => adapter.MimeType(path);
