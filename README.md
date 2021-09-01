@@ -5,7 +5,7 @@
 ![.NET](https://img.shields.io/badge/.NET-5.0-purple)
 [![Restore, Build and Test Solution](https://github.com/dutch-and-bold/flystorage/actions/workflows/restore-build-test-solution.yml/badge.svg)](https://github.com/dutch-and-bold/flystorage/actions/workflows/restore-build-test-solution.yml)
 
-Flystorage is a .NET port of the massively popular file storage library [Flysystem](https://flysystem.thephpleague.com/v2/docs/). It provides the same interface to interact with many different types of filesystems.
+Flystorage is a C#/.NET port of the massively popular file storage library [Flysystem](https://flysystem.thephpleague.com/v2/docs/). It provides the same interface to interact with many different types of filesystems.
 When you use Flystorage, you’re not only protected from vendor lock-in, you’ll also have a consistent experience for which ever storage is right for you.
 
 ## Table of Contents
